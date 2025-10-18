@@ -36,7 +36,7 @@ En otra terminal con el entorno virtual activado:
 streamlit run frontend/app.py --server.port 8501
 ```
 
-La aplicación abrirá en <http://localhost:8501>. En la barra lateral podés ajustar el número de snippets a recuperar, habilitar la búsqueda web (mock) y configurar la URL del backend.
+La aplicación abrirá en <http://localhost:8501>. En la barra lateral podés ajustar el número de snippets a recuperar, habilitar la búsqueda web (mock) y configurar la URL del backend. Si querés definir una URL por defecto distinta antes de iniciar Streamlit, exportá `INSURANCE_CHATBOT_API_URL` (por ejemplo, `export INSURANCE_CHATBOT_API_URL=http://localhost:8000/chat`).
 
 ## Contrato del endpoint `/chat`
 
@@ -88,6 +88,8 @@ La aplicación abrirá en <http://localhost:8501>. En la barra lateral podés aj
 ```bash
 docker compose up --build
 ```
+
+El `docker-compose.yml` ya define `INSURANCE_CHATBOT_API_URL=http://backend:8000/chat` para que el frontend se comunique con el backend dentro de la red interna del stack. Externamente tendrás:
 
 - Backend disponible en <http://localhost:8000>
 - Frontend disponible en <http://localhost:8501>

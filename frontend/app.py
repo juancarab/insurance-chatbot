@@ -1,12 +1,13 @@
 """Streamlit frontend for the Insurance Chatbot."""
 from __future__ import annotations
 
+import os
 from typing import Any, Dict, List
 
 import requests
 import streamlit as st
 
-DEFAULT_API_URL = "http://localhost:8000/chat"
+DEFAULT_API_URL = os.getenv("INSURANCE_CHATBOT_API_URL", "http://localhost:8000/chat")
 
 
 def init_session() -> None:
