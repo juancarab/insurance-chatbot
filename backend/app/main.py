@@ -138,6 +138,23 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
     return ChatResponse(answer=answer, sources=retrieved_sources, usage=usage)
 
 
+@app.get("/chat", include_in_schema=False)
+def chat_get_landing() -> Dict[str, Any]:
+    """Helpful response for accidental GET requests to /chat."""
+
+    return {
+        "message": "Use POST /chat with a ChatRequest payload to talk to the bot.",
+        "example_request": {
+            "messages": [
+                {"role": "user", "content": "What does the policy cover?"}
+            ],
+            "top_k": 3,
+            "enable_web_search": False,
+        },
+        "schema_docs": "/docs#/default/chat_endpoint_chat__post",
+    }
+
+
 @app.get("/", include_in_schema=False)
 def root() -> Dict[str, str]:
     """Simple landing endpoint for manual pokes at the API root."""
