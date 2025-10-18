@@ -138,6 +138,16 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
     return ChatResponse(answer=answer, sources=retrieved_sources, usage=usage)
 
 
+@app.get("/", include_in_schema=False)
+def root() -> Dict[str, str]:
+    """Simple landing endpoint for manual pokes at the API root."""
+
+    return {
+        "message": "Insurance Chatbot API is running. Use POST /chat or visit /docs.",
+        "docs_url": "/docs",
+    }
+
+
 @app.get("/health", tags=["health"])
 def healthcheck() -> Dict[str, str]:
     return {"status": "ok"}
