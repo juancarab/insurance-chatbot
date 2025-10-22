@@ -165,12 +165,123 @@ class LangChainAgentFormatter:
         return str(result)
 
 
+class GeminiAnswerFormatter:
+    """Formatter that delegates response generation to Google Gemini."""
+
+    def __init__(self, model: Any):
+        self._model = model
+
+    @classmethod
+    def from_environment(cls) -> "GeminiAnswerFormatter":
+        """Configure the Gemini client using environment variables."""
+
+        try:
+            import google.generativeai as genai
+        except ImportError as exc:  # pragma: no cover - runtime dependency guard
+            raise RuntimeError(
+                "google-generativeai must be installed to use the Gemini formatter."
+            ) from exc
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "GEMINI_API_KEY must be set when INSURANCE_CHATBOT_FORMATTER=gemini."
+            )
+
+        model_name = os.getenv("GEMINI_MODEL")
+        if not model_name:
+            raise RuntimeError(
+                "GEMINI_MODEL must be set when INSURANCE_CHATBOT_FORMATTER=gemini."
+            )
+
+        genai.configure(api_key=api_key)
+
+        generation_config: Dict[str, Any] = {}
+        temperature = os.getenv("GEMINI_TEMPERATURE")
+        if temperature is not None:
+            try:
+                generation_config["temperature"] = float(temperature)
+            except ValueError as exc:  # pragma: no cover - misconfiguration guard
+                raise RuntimeError("GEMINI_TEMPERATURE must be a number.") from exc
+
+        top_p = os.getenv("GEMINI_TOP_P")
+        if top_p is not None:
+            try:
+                generation_config["top_p"] = float(top_p)
+            except ValueError as exc:  # pragma: no cover - misconfiguration guard
+                raise RuntimeError("GEMINI_TOP_P must be a number.") from exc
+
+        max_output_tokens = os.getenv("GEMINI_MAX_OUTPUT_TOKENS")
+        if max_output_tokens is not None:
+            try:
+                generation_config["max_output_tokens"] = int(max_output_tokens)
+            except ValueError as exc:  # pragma: no cover - misconfiguration guard
+                raise RuntimeError("GEMINI_MAX_OUTPUT_TOKENS must be an integer.") from exc
+
+        model = genai.GenerativeModel(
+            model_name,
+            generation_config=generation_config or None,
+        )
+
+        return cls(model=model)
+
+    def format_answer(self, messages: List[Message], contexts: List[Source]) -> str:
+        conversation = "\n".join(
+            f"{message.role.upper()}: {message.content}" for message in messages
+        )
+
+        if contexts:
+            context_block = "\n".join(
+                f"{source.title}: {source.snippet}" for source in contexts
+            )
+            context_prompt = (
+                f"Relevant policy snippets:\n{context_block}\n\n"
+            )
+        else:
+            context_prompt = "No policy snippets were retrieved for this turn.\n\n"
+
+        system_prompt = (
+            "You are an insurance assistant. Provide concise, accurate answers grounded in the"
+            " provided policy snippets. If the context does not contain the answer, say you"
+            " do not know. Respond in the same language as the user."
+        )
+
+        composed_prompt = (
+            f"{system_prompt}\n\n"
+            f"{context_prompt}Conversation history:\n{conversation}\n\n"
+            "Assistant response:"
+        )
+
+        try:
+            response = self._model.generate_content(composed_prompt)
+        except Exception as exc:  # pragma: no cover - defensive guard for API failures
+            raise RuntimeError("Gemini failed to generate a response.") from exc
+
+        text_response = getattr(response, "text", None)
+
+        if not text_response and getattr(response, "candidates", None):
+            parts: List[str] = []
+            for candidate in response.candidates:
+                for part in getattr(candidate.content, "parts", []):
+                    value = getattr(part, "text", None)
+                    if value:
+                        parts.append(value)
+            text_response = "\n".join(parts)
+
+        if not text_response:
+            raise RuntimeError("Gemini returned an empty response.")
+
+        return text_response.strip()
+
+
 def build_formatter() -> AnswerFormatterProtocol:
     """Return the formatter strategy indicated by configuration."""
 
     strategy = os.getenv("INSURANCE_CHATBOT_FORMATTER", "mock").lower()
     if strategy == "langchain":
         return LangChainAgentFormatter.from_environment()
+    if strategy == "gemini":
+        return GeminiAnswerFormatter.from_environment()
 
     return MockAnswerFormatter()
 
