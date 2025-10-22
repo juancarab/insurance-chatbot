@@ -1,7 +1,9 @@
 """FastAPI application exposing the Insurance Chatbot API."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional
+import importlib
+import os
+from typing import Any, Callable, Dict, List, Literal, Optional, Protocol
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -85,7 +87,14 @@ class WebSearchClient:
         ]
 
 
-class AnswerFormatter:
+class AnswerFormatterProtocol(Protocol):
+    """Interface implemented by all answer formatter strategies."""
+
+    def format_answer(self, messages: List[Message], contexts: List[Source]) -> str:
+        """Return the assistant message given the conversation and retrieved sources."""
+
+
+class MockAnswerFormatter:
     """Stub answer formatter that would normally invoke an LLM."""
 
     def format_answer(self, messages: List[Message], contexts: List[Source]) -> str:
@@ -105,9 +114,70 @@ class AnswerFormatter:
         )
 
 
+class LangChainAgentFormatter:
+    """Adapter that delegates formatting to a LangChain-powered runner."""
+
+    def __init__(self, runner: Callable[..., Any]):
+        self._runner = runner
+
+    @classmethod
+    def from_environment(cls) -> "LangChainAgentFormatter":
+        """Resolve the runner configured through environment variables."""
+
+        target = os.getenv("INSURANCE_CHATBOT_LANGCHAIN_RUNNER")
+        if not target:
+            raise RuntimeError(
+                "INSURANCE_CHATBOT_LANGCHAIN_RUNNER must be defined when "
+                "INSURANCE_CHATBOT_FORMATTER=langchain. Use 'module:function'."
+            )
+
+        module_name, _, attr = target.partition(":")
+        if not module_name or not attr:
+            raise RuntimeError(
+                "INSURANCE_CHATBOT_LANGCHAIN_RUNNER must follow the format "
+                "'package.module:function_name'."
+            )
+
+        module = importlib.import_module(module_name)
+        runner = getattr(module, attr)
+        if not callable(runner):
+            raise RuntimeError(
+                f"The object '{attr}' loaded from '{module_name}' must be callable."
+            )
+
+        return cls(runner)
+
+    def format_answer(self, messages: List[Message], contexts: List[Source]) -> str:
+        try:
+            result = self._runner(
+                messages=[message.dict() for message in messages],
+                contexts=[source.dict() for source in contexts],
+            )
+        except Exception as exc:  # pragma: no cover - defensive guard for integrations
+            raise RuntimeError("LangChain runner failed to generate a response.") from exc
+
+        if isinstance(result, dict):
+            for key in ("output", "answer", "result", "content"):
+                if key in result:
+                    return str(result[key])
+            return str(result)
+
+        return str(result)
+
+
+def build_formatter() -> AnswerFormatterProtocol:
+    """Return the formatter strategy indicated by configuration."""
+
+    strategy = os.getenv("INSURANCE_CHATBOT_FORMATTER", "mock").lower()
+    if strategy == "langchain":
+        return LangChainAgentFormatter.from_environment()
+
+    return MockAnswerFormatter()
+
+
 app = FastAPI(title="Insurance Chatbot API", version="0.1.0")
 retriever = PolicyRetriever()
-formatter = AnswerFormatter()
+formatter = build_formatter()
 web_search = WebSearchClient()
 
 
@@ -133,6 +203,7 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
     usage = {
         "retrieved_documents": len(retrieved_sources),
         "web_search_enabled": request.enable_web_search,
+        "formatter": os.getenv("INSURANCE_CHATBOT_FORMATTER", "mock"),
     }
 
     return ChatResponse(answer=answer, sources=retrieved_sources, usage=usage)

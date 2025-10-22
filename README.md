@@ -79,7 +79,7 @@ La aplicación abrirá en <http://localhost:8501>. En la barra lateral podés aj
 }
 ```
 
-- `answer`: respuesta del stub `AnswerFormatter`.
+- `answer`: respuesta del stub `MockAnswerFormatter` (o del agente si está configurado).
 - `sources`: lista de objetos `Source`. Sirve de contrato para integrar el recuperador real.
 - `usage`: métricas o diagnósticos (libre).
 
