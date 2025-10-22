@@ -6,13 +6,6 @@ Interfaz demo y API para el proyecto *Insurance Chatbot*. Este repositorio inclu
 - Frontend Streamlit con una UI de chat que consume la API.
 - Dependencias mínimas y guía para ejecutar todo localmente.
 
-## Resumen rápido para el equipo
-
-- **Backend listo para conectar**: el endpoint `/chat` ya recibe el historial, el `top_k` y la bandera de búsqueda web. Basta con sustituir las clases stub `PolicyRetriever`, `MockAnswerFormatter` y `WebSearchClient` para enchufar el recuperador real y el agente/LLM sin tocar el contrato.
-- **Formatter configurable**: se puede alternar entre el mock, un agente de LangChain o Google Gemini definiendo `INSURANCE_CHATBOT_FORMATTER` y las variables de entorno asociadas (`GEMINI_API_KEY`, `GEMINI_MODEL`, etc.).
-- **Frontend preparado**: la interfaz envía esos mismos parámetros en cada turno, muestra el texto devuelto y lista las fuentes. Cuando el backend entregue respuestas reales, se verán automáticamente en la UI.
-- **Configuración sencilla**: podés cambiar la URL del backend desde la barra lateral o vía `INSURANCE_CHATBOT_API_URL`, lo que facilita probar entornos locales o desplegados.
-
 ## Requisitos previos
 
 - Python 3.10+
