@@ -38,6 +38,12 @@ streamlit run frontend/app.py --server.port 8501
 
 La aplicación abrirá en <http://localhost:8501>. En la barra lateral podés ajustar el número de snippets a recuperar, habilitar la búsqueda web (mock) y configurar la URL del backend. Si querés definir una URL por defecto distinta antes de iniciar Streamlit, exportá `INSURANCE_CHATBOT_API_URL` (por ejemplo, `export INSURANCE_CHATBOT_API_URL=http://localhost:8000/chat`).
 
+## Configuración de variables de entorno
+
+- El backend lee toda su configuración desde `backend/app/config.py`, un módulo basado en `pydantic.BaseSettings` que también carga automáticamente un archivo `.env` si está presente en la raíz del repositorio.
+- Copiá `.env.example` a `.env` y completá las variables según la integración que quieras probar (`mock`, `langchain` o `gemini`).
+- Los mismos valores funcionan tanto para ejecuciones locales como para Docker Compose, evitando tener que exportar manualmente cada variable en la terminal.
+
 ## Contrato del endpoint `/chat`
 
 ### Request

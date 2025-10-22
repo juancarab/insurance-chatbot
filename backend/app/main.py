@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import importlib
-import os
 from typing import Any, Callable, Dict, List, Literal, Optional, Protocol
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+
+from .config import Settings, get_settings
 
 
 class Message(BaseModel):
@@ -121,10 +122,10 @@ class LangChainAgentFormatter:
         self._runner = runner
 
     @classmethod
-    def from_environment(cls) -> "LangChainAgentFormatter":
-        """Resolve the runner configured through environment variables."""
+    def from_settings(cls, settings: Settings) -> "LangChainAgentFormatter":
+        """Resolve the runner configured through application settings."""
 
-        target = os.getenv("INSURANCE_CHATBOT_LANGCHAIN_RUNNER")
+        target = settings.langchain_runner
         if not target:
             raise RuntimeError(
                 "INSURANCE_CHATBOT_LANGCHAIN_RUNNER must be defined when "
@@ -172,8 +173,8 @@ class GeminiAnswerFormatter:
         self._model = model
 
     @classmethod
-    def from_environment(cls) -> "GeminiAnswerFormatter":
-        """Configure the Gemini client using environment variables."""
+    def from_settings(cls, settings: Settings) -> "GeminiAnswerFormatter":
+        """Configure the Gemini client using application settings."""
 
         try:
             import google.generativeai as genai
@@ -182,13 +183,13 @@ class GeminiAnswerFormatter:
                 "google-generativeai must be installed to use the Gemini formatter."
             ) from exc
 
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = settings.gemini_api_key
         if not api_key:
             raise RuntimeError(
                 "GEMINI_API_KEY must be set when INSURANCE_CHATBOT_FORMATTER=gemini."
             )
 
-        model_name = os.getenv("GEMINI_MODEL")
+        model_name = settings.gemini_model
         if not model_name:
             raise RuntimeError(
                 "GEMINI_MODEL must be set when INSURANCE_CHATBOT_FORMATTER=gemini."
@@ -197,26 +198,14 @@ class GeminiAnswerFormatter:
         genai.configure(api_key=api_key)
 
         generation_config: Dict[str, Any] = {}
-        temperature = os.getenv("GEMINI_TEMPERATURE")
-        if temperature is not None:
-            try:
-                generation_config["temperature"] = float(temperature)
-            except ValueError as exc:  # pragma: no cover - misconfiguration guard
-                raise RuntimeError("GEMINI_TEMPERATURE must be a number.") from exc
+        if settings.gemini_temperature is not None:
+            generation_config["temperature"] = settings.gemini_temperature
 
-        top_p = os.getenv("GEMINI_TOP_P")
-        if top_p is not None:
-            try:
-                generation_config["top_p"] = float(top_p)
-            except ValueError as exc:  # pragma: no cover - misconfiguration guard
-                raise RuntimeError("GEMINI_TOP_P must be a number.") from exc
+        if settings.gemini_top_p is not None:
+            generation_config["top_p"] = settings.gemini_top_p
 
-        max_output_tokens = os.getenv("GEMINI_MAX_OUTPUT_TOKENS")
-        if max_output_tokens is not None:
-            try:
-                generation_config["max_output_tokens"] = int(max_output_tokens)
-            except ValueError as exc:  # pragma: no cover - misconfiguration guard
-                raise RuntimeError("GEMINI_MAX_OUTPUT_TOKENS must be an integer.") from exc
+        if settings.gemini_max_output_tokens is not None:
+            generation_config["max_output_tokens"] = settings.gemini_max_output_tokens
 
         model = genai.GenerativeModel(
             model_name,
@@ -274,21 +263,21 @@ class GeminiAnswerFormatter:
         return text_response.strip()
 
 
-def build_formatter() -> AnswerFormatterProtocol:
+def build_formatter(settings: Settings) -> AnswerFormatterProtocol:
     """Return the formatter strategy indicated by configuration."""
 
-    strategy = os.getenv("INSURANCE_CHATBOT_FORMATTER", "mock").lower()
-    if strategy == "langchain":
-        return LangChainAgentFormatter.from_environment()
-    if strategy == "gemini":
-        return GeminiAnswerFormatter.from_environment()
+    if settings.formatter == "langchain":
+        return LangChainAgentFormatter.from_settings(settings)
+    if settings.formatter == "gemini":
+        return GeminiAnswerFormatter.from_settings(settings)
 
     return MockAnswerFormatter()
 
 
 app = FastAPI(title="Insurance Chatbot API", version="0.1.0")
 retriever = PolicyRetriever()
-formatter = build_formatter()
+settings = get_settings()
+formatter = build_formatter(settings)
 web_search = WebSearchClient()
 
 
@@ -314,7 +303,7 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
     usage = {
         "retrieved_documents": len(retrieved_sources),
         "web_search_enabled": request.enable_web_search,
-        "formatter": os.getenv("INSURANCE_CHATBOT_FORMATTER", "mock"),
+        "formatter": settings.formatter,
     }
 
     return ChatResponse(answer=answer, sources=retrieved_sources, usage=usage)
