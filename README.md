@@ -40,6 +40,37 @@ La aplicación abrirá en <http://localhost:8501>. En la barra lateral podés aj
 
 ## Contrato del endpoint `/chat`
 
+### Opensearch & Tavily
+
+  ## APIKEY de tavily:
+  https://app.tavily.com/home
+
+
+  ## levantar los servicios de docker
+  ```bash
+  docker compose up -d --build
+  ```
+
+  ## Crear el indice hibrido
+  ```bash
+  docker compose exec backend bash -lc "python infra/opensearch/setup_opensearch.py"
+  ```
+
+  ## para ejecutar los test
+  ```bash
+  python -m pytest -q
+  ```
+
+  ## .env 
+  OPENSEARCH_HOST=opensearch
+  OPENSEARCH_PORT=9200
+  OPENSEARCH_INDEX=policies
+  OPENSEARCH_EMBED_DIM=384
+  TAVILY_API_KEY=apikey
+  WEB_SEARCH_MAX_RESULTS=5
+  WEB_SEARCH_FRESHNESS_DAYS=30
+
+
 ### Request
 
 ```json
