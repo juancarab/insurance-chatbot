@@ -1,44 +1,31 @@
-# =====================
-# ENTORNOS VIRTUALES
-# =====================
+# Entornos virtuales
 .venv/
 venv/
+env/
 
-# =====================
-# DATOS LOCALES / PDFs
-# (No versionar datasets grandes o archivos binarios)
-# =====================
+# Variables de entorno
+.env
+*.env
+.env.*
+
+# Datos locales y salidas generadas
 data_pipeline/data/
-
-# =====================
-# SALIDAS GENERADAS
-# (Archivos de análisis, reportes, etc.)
-# =====================
 eda_out/
 *.log
 
-# =====================
-# VARIABLES DE ENTORNO
-# (Solo se versiona .env.example)
-# =====================
-.env
-*.env
-
-# =====================
-# CACHE DE PYTHON / BUILD
-# =====================
+# Caché y builds de Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .pytest_cache/
+.mypy_cache/
 
-# =====================
-# EDITOR / SISTEMA
-# =====================
+# Configuración de editores / sistema
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
+# Archivos locales
 ./web_search_cli.py
