@@ -89,9 +89,11 @@ class WebSearchClient:
 
 
 class AnswerFormatterProtocol(Protocol):
-    """Interface implemented by all answer formatter strategies."""
-
-    def format_answer(self, messages: List[Message], contexts: List[Source]) -> str:
+    """
+    Interface implemented by all answer formatter strategies.
+    A formatter can return a simple string or a dictionary for richer responses.
+    """
+    def format_answer(self, messages: List[Message], contexts: List[Source]) -> Dict[str, Any] | str:
         """Return the assistant message given the conversation and retrieved sources."""
 
 
@@ -124,46 +126,54 @@ class LangChainAgentFormatter:
     @classmethod
     def from_settings(cls, settings: Settings) -> "LangChainAgentFormatter":
         """Resolve the runner configured through application settings."""
-
         target = settings.langchain_runner
         if not target:
             raise RuntimeError(
                 "INSURANCE_CHATBOT_LANGCHAIN_RUNNER must be defined when "
                 "INSURANCE_CHATBOT_FORMATTER=langchain. Use 'module:function'."
             )
-
         module_name, _, attr = target.partition(":")
         if not module_name or not attr:
             raise RuntimeError(
                 "INSURANCE_CHATBOT_LANGCHAIN_RUNNER must follow the format "
                 "'package.module:function_name'."
             )
-
-        module = importlib.import_module(module_name)
-        runner = getattr(module, attr)
+        try:
+            module = importlib.import_module(module_name)
+            runner = getattr(module, attr)
+        except (ImportError, AttributeError) as exc:
+            raise RuntimeError(f"Failed to load LangChain runner '{target}'.") from exc
         if not callable(runner):
             raise RuntimeError(
                 f"The object '{attr}' loaded from '{module_name}' must be callable."
             )
-
         return cls(runner)
 
-    def format_answer(self, messages: List[Message], contexts: List[Source]) -> str:
+    def format_answer(self, messages: List[Message], contexts: List[Source]) -> Dict[str, Any]:
+        """
+        Invokes the LangChain runner and expects a dictionary containing at least 'answer'.
+        The runner can also override 'sources' if needed.
+        """
         try:
             result = self._runner(
                 messages=[message.dict() for message in messages],
                 contexts=[source.dict() for source in contexts],
             )
-        except Exception as exc:  # pragma: no cover - defensive guard for integrations
+        except Exception as exc: 
             raise RuntimeError("LangChain runner failed to generate a response.") from exc
 
+        if isinstance(result, dict) and "answer" in result:
+            return {
+                "answer": str(result["answer"]),
+                "sources": result.get("sources", [source.dict() for source in contexts]),
+            }
         if isinstance(result, dict):
             for key in ("output", "answer", "result", "content"):
                 if key in result:
-                    return str(result[key])
-            return str(result)
+                    return {"answer": str(result[key]), "sources": [source.dict() for source in contexts]}
+            return {"answer": str(result), "sources": [source.dict() for source in contexts]}
 
-        return str(result)
+        return {"answer": str(result), "sources": [source.dict() for source in contexts]}
 
 
 class GeminiAnswerFormatter:
@@ -178,7 +188,7 @@ class GeminiAnswerFormatter:
 
         try:
             import google.generativeai as genai
-        except ImportError as exc:  # pragma: no cover - runtime dependency guard
+        except ImportError as exc:  
             raise RuntimeError(
                 "google-generativeai must be installed to use the Gemini formatter."
             ) from exc
@@ -243,7 +253,7 @@ class GeminiAnswerFormatter:
 
         try:
             response = self._model.generate_content(composed_prompt)
-        except Exception as exc:  # pragma: no cover - defensive guard for API failures
+        except Exception as exc:  
             raise RuntimeError("Gemini failed to generate a response.") from exc
 
         text_response = getattr(response, "text", None)
@@ -265,12 +275,10 @@ class GeminiAnswerFormatter:
 
 def build_formatter(settings: Settings) -> AnswerFormatterProtocol:
     """Return the formatter strategy indicated by configuration."""
-
     if settings.formatter == "langchain":
         return LangChainAgentFormatter.from_settings(settings)
     if settings.formatter == "gemini":
         return GeminiAnswerFormatter.from_settings(settings)
-
     return MockAnswerFormatter()
 
 
@@ -285,28 +293,32 @@ web_search = WebSearchClient()
 def chat_endpoint(request: ChatRequest) -> ChatResponse:
     if not request.messages:
         raise HTTPException(status_code=400, detail="At least one message is required.")
-
     latest_message = request.messages[-1]
     if latest_message.role != "user":
         raise HTTPException(
             status_code=400,
             detail="The latest message in the conversation must come from the user.",
         )
-
     retrieved_sources = retriever.search(latest_message.content, top_k=request.top_k)
-
     if request.enable_web_search:
         retrieved_sources.extend(web_search.search(latest_message.content))
+    
+    formatted_result = formatter.format_answer(request.messages, retrieved_sources)
 
-    answer = formatter.format_answer(request.messages, retrieved_sources)
+    if isinstance(formatted_result, dict):
+        answer = formatted_result.get("answer", "Error: The model response did not contain 'answer'.")
+        final_sources_data = formatted_result.get("sources", [])
+        final_sources = [Source(**s) for s in final_sources_data]
+    else:
+        answer = str(formatted_result)
+        final_sources = retrieved_sources
 
     usage = {
         "retrieved_documents": len(retrieved_sources),
         "web_search_enabled": request.enable_web_search,
         "formatter": settings.formatter,
     }
-
-    return ChatResponse(answer=answer, sources=retrieved_sources, usage=usage)
+    return ChatResponse(answer=answer, sources=final_sources, usage=usage)
 
 
 @app.get("/chat", include_in_schema=False)
