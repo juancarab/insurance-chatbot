@@ -27,7 +27,7 @@ def test_index_mapping(os_client):
 
 def test_search_returns_results(os_client):
     query = {
-        "query": {"match": {"text": "hospitalization"}},
+        "query": {"match": {"text": "asegurador"}},
         "size": 1
     }
     result = os_client.search(index=INDEX_NAME, body=query)

@@ -5,7 +5,7 @@ from typing import List
 from opensearchpy import OpenSearch, ConnectionError as OSConnectionError
 
 INDEX_NAME = os.getenv("OPENSEARCH_INDEX", "policies")
-EMBED_DIM = int(os.getenv("OPENSEARCH_EMBED_DIM", "384")) #Dimension del vector de embedding cuando lo tengamos
+EMBED_DIM = int(os.getenv("OPENSEARCH_EMBED_DIM", "384"))
 HOST = os.getenv("OPENSEARCH_HOST", "localhost")
 PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
 

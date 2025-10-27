@@ -6,12 +6,11 @@ knowledge base (Opensearch) does not have enough context
 
 from __future__ import annotations
 import os
-from typing import List, Dict, Optional
-
+from typing import List, Dict, Optional, Type
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from langchain.tools import BaseTool
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain_core.callbacks import CallbackManagerForToolRun
 from tavily import TavilyClient
 
 # Para que funcione local o en docker
@@ -30,12 +29,12 @@ class WebSearchTool(BaseTool):
     LangChain Tool for performing web searches using Tavily API
     Returns a list of dictionaries with title, url, snippet and source
     """
-    name = "web_search"
-    description = (
+    name: str = "web_search"
+    description: str = (
         "Search the web for up to date information using the tavily API"
         "Use this when the local knowledge base lacks context or recent data"
     )
-    args_schema = WebSearchInput
+    args_schema: Type[WebSearchInput] = WebSearchInput
 
     def _run(
         self,

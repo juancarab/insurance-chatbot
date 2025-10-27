@@ -48,7 +48,6 @@ services:
       - "9200:9200"
       - "9600:9600"
     healthcheck:
-      # wget suele venir en la imagen; si no, el healthcheck igual es opcional
       test: ["CMD-SHELL", "wget -q -O - http://localhost:9200/_cluster/health || exit 1"]
       interval: 10s
       timeout: 5s
