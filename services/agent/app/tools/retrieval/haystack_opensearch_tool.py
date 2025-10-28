@@ -1,4 +1,5 @@
 import asyncio
+import os
 import logging
 from typing import List, Optional, Type
 
@@ -22,10 +23,11 @@ from haystack.dataclasses import Document as HaystackDocument
 
 logger = logging.getLogger(__name__)
 
-OPENSEARCH_HOST = "http://localhost:9200"
-OPENSEARCH_INDEX = "policies"
-EMBED_DIM = 384
-EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+OPENSEARCH_HOST = os.getenv("OPENSEARCH_HOST", "http://opensearch")
+OPENSEARCH_PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
+OPENSEARCH_INDEX = os.getenv("OPENSEARCH_INDEX", "policies")
+EMBED_DIM = int(os.getenv("OPENSEARCH_EMBED_DIM", "384"))
+EMBED_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
 doc_store = OpenSearchDocumentStore(
     hosts=[OPENSEARCH_HOST],
@@ -51,7 +53,6 @@ haystack_retriever_instance = OpenSearchHybridRetriever(
     top_k_embedding=5,
     join_mode="reciprocal_rank_fusion",
 )
-
 
 class HaystackOpenSearchRetriever(BaseRetriever):
     """

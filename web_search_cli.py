@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, json
-from agent.app.tools.web_search import WebSearchTool
+from services.agent.app.tools.web_search.web_search import WebSearchTool
 
 def call_tool(tool, query: str):
     # Probar patrones comunes de LangChain Tools

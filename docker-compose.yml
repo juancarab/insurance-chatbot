@@ -1,38 +1,24 @@
 services:
   backend:
-    image: python:3.11-slim
-    working_dir: /app
-    volumes:
-      - ./:/app
-    command: bash -c "pip install -r requirements.txt && uvicorn backend.app.main:app --host 0.0.0.0 --port 8000"
-    environment:
-      OPENSEARCH_HOST: opensearch
-      OPENSEARCH_PORT: "9200"
-      OPENSEARCH_INDEX: policies
-      OPENSEARCH_EMBED_DIM: "384"
-      TAVILY_API_KEY: ${TAVILY_API_KEY}
-      WEB_SEARCH_MAX_RESULTS: "5"
-      WEB_SEARCH_FRESHNESS_DAYS: "30"
-      INSURANCE_CHATBOT_FORMATTER: "langchain"
-      INSURANCE_CHATBOT_LANGCHAIN_RUNNER: "backend.app.langchain_runner:run_langchain_agent"
-      GEMINI_API_KEY: ${GEMINI_API_KEY}     
-      GEMINI_MODEL: "gemini-2.5-flash"
+    build:
+      context: .
+      dockerfile: services/backend/Dockerfile
+    env_file:
+      - .env
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT}:8000"
     depends_on:
-      - opensearch
+      opensearch:
+        condition: service_healthy
 
   frontend:
-    image: python:3.11-slim
-    working_dir: /app
-    volumes:
-      - ./:/app
-    command: bash -c "pip install -r requirements.txt && streamlit run frontend/app.py --server.address 0.0.0.0 --server.port 8501"
-    environment:
-      INSURANCE_CHATBOT_API_URL: http://backend:8000/chat
-      STREAMLIT_SERVER_HEADLESS: "true"
+    build:
+      context: .
+      dockerfile: services/frontend/Dockerfile
+    env_file:
+      - .env
     ports:
-      - "8501:8501"
+      - "${FRONTEND_PORT}:8501"
     depends_on:
       - backend
 
@@ -45,17 +31,17 @@ services:
       - OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g
       - bootstrap.memory_lock=true
     ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+      memlock: { soft: -1, hard: -1 }
+      nofile: 65536
     ports:
       - "9200:9200"
       - "9600:9600"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=60s' >/dev/null || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 40s
     restart: unless-stopped
     volumes:
       - os-data:/usr/share/opensearch/data

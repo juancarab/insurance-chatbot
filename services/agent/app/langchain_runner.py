@@ -9,11 +9,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
-from agent.app.tools.web_search import WebSearchTool
-from agent.app.tools.haystack_opensearch_tool import retrieval_tool
+from agent.app.tools.web_search.web_search  import WebSearchTool
+from agent.app.tools.retrieval.haystack_opensearch_tool import retrieval_tool
+
 
 from .config import get_settings
-
 
 class AgentState(TypedDict):
     """It represents the state of the agent at each step of the graph."""

@@ -8,7 +8,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from .config import Settings, get_settings
+import logging
 
+logging.basicConfig(level=logging.ERROR)
 
 class Message(BaseModel):
     """Represents a chat message."""
@@ -127,7 +129,8 @@ class LangChainAgentFormatter:
                 messages=[message.dict() for message in messages],
                 contexts=[source.dict() for source in contexts],
             )
-        except Exception as exc: 
+        except Exception as exc:
+            logging.error("LangChain runner failed to generate a response", exc_info=True)
             raise RuntimeError("LangChain runner failed to generate a response.") from exc
 
         if isinstance(result, dict) and "answer" in result:
