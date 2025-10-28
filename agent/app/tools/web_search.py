@@ -9,7 +9,7 @@ import os
 from typing import List, Dict, Optional, Type
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-from langchain.tools import BaseTool
+from langchain_core.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 from tavily import TavilyClient
 

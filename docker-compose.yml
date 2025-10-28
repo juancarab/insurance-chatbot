@@ -13,6 +13,10 @@ services:
       TAVILY_API_KEY: ${TAVILY_API_KEY}
       WEB_SEARCH_MAX_RESULTS: "5"
       WEB_SEARCH_FRESHNESS_DAYS: "30"
+      INSURANCE_CHATBOT_FORMATTER: "langchain"
+      INSURANCE_CHATBOT_LANGCHAIN_RUNNER: "backend.app.langchain_runner:run_langchain_agent"
+      GEMINI_API_KEY: ${GEMINI_API_KEY}     
+      GEMINI_MODEL: "gemini-2.5-flash"
     ports:
       - "8000:8000"
     depends_on:
