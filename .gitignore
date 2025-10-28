@@ -9,7 +9,7 @@ env/
 .env.*
 
 # Datos locales y salidas generadas
-data_pipeline/data/
+data/raw_policies
 eda_out/
 *.log
 
