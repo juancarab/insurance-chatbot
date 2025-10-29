@@ -4,7 +4,7 @@ from typing import List, Dict
 from opensearchpy import OpenSearch, helpers
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import SentenceTransformerEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 # --- Config rápida ---
 OPENSEARCH_HOST = "localhost"
@@ -12,8 +12,8 @@ OPENSEARCH_PORT = 9200
 OPENSEARCH_USER = "admin"
 OPENSEARCH_PASSWORD = "admin"
 
-INDEX_NAME = "policies-v1"
-PDF_DIR = "data/pdf_docs"
+INDEX_NAME = "policies"
+PDF_DIR = "./raw_policies"
 CHUNK_SIZE = 600
 CHUNK_OVERLAP = 120
 
@@ -28,7 +28,7 @@ client = OpenSearch(
     use_ssl=False, verify_certs=False, ssl_show_warn=False, ssl_assert_hostname=False,
 )
 
-embedder = SentenceTransformerEmbeddings(
+embedder = HuggingFaceEmbeddings(
     model_name=MODEL_NAME,
     encode_kwargs={"normalize_embeddings": True, "batch_size": BATCH_SIZE},
 )
@@ -37,7 +37,7 @@ embedder = SentenceTransformerEmbeddings(
 MAPPING = {
     "settings": {"index": {"knn": True, "number_of_shards": 1, "number_of_replicas": 0}},
     "mappings": {"properties": {
-        "content": {"type": "text"},
+        "text": {"type": "text"},
         "metadata": {"type": "object", "properties": {
             "file_name": {"type": "keyword"},
             "page": {"type": "integer"},
@@ -95,7 +95,7 @@ def bulk_index(texts, metas) -> int:
     actions = [{
         "_op_type": "index",
         "_index": INDEX_NAME,
-        "_source": {"content": t, "metadata": m, "embedding": v},
+        "_source": {"text": t, "metadata": m, "embedding": v},
     } for t, m, v in zip(texts, metas, vecs)]
     if actions:
         helpers.bulk(client, actions, chunk_size=500)
@@ -105,11 +105,11 @@ def bulk_index(texts, metas) -> int:
 # --- Consulta de prueba (opcional) ---
 def knn_test(q: str, k: int = 5) -> None:
     qv = embedder.embed_query(q)
-    body = {"size": k, "query": {"knn": {"embedding": {"vector": qv, "k": k}}}, "_source": ["content", "metadata"]}
+    body = {"size": k, "query": {"knn": {"embedding": {"vector": qv, "k": k}}}, "_source": ["text", "metadata"]}
     res = client.search(index=INDEX_NAME, body=body)
     print("\nResultados k-NN:")
     for i, h in enumerate(res.get("hits", {}).get("hits", []), 1):
-        s = h["_source"]; m = s["metadata"]; prev = s["content"].replace("\n", " ")
+        s = h["_source"]; m = s["metadata"]; prev = s["text"].replace("\n", " ")
         print(f"[{i}] {m['file_name']} p.{m['page']}  score={h['_score']:.3f}")
         print(f"    {prev[:160]}{'...' if len(prev) > 160 else ''}")
 

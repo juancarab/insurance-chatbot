@@ -1,14 +1,31 @@
-.env
-*.env
-.env.*
-
+# Entornos virtuales
 .venv/
 venv/
 env/
 
+# Variables de entorno
+.env
+*.env
+.env.*
+
+# Datos locales y salidas generadas
+data/raw_policies
+eda_out/
+*.log
+
+# Caché y builds de Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
 .pytest_cache/
 .mypy_cache/
 
+# Configuración de editores / sistema
 .vscode/
 .idea/
+.DS_Store
+Thumbs.db
+
+# Archivos locales
+./web_search_cli.py

@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Annotated, Any, Dict, List, Optional, Type, TypedDict
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -8,8 +9,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
-from .config import get_settings
+from agent.app.tools.web_search.web_search  import WebSearchTool
+from agent.app.tools.retrieval.haystack_opensearch_tool import retrieval_tool
 
+
+from .config import get_settings
 
 class AgentState(TypedDict):
     """It represents the state of the agent at each step of the graph."""
@@ -32,7 +36,10 @@ class CalculatorTool(BaseTool):
     async def _arun(self, expression: str) -> str:
         return self._run(expression)
 
-AGENT_TOOLS: List[BaseTool] = [CalculatorTool()]
+AGENT_TOOLS: List[BaseTool] = [
+    CalculatorTool(),
+    WebSearchTool(),  
+    retrieval_tool]
 
 class AgentRunner:
     def __init__(self):
@@ -60,11 +67,15 @@ class AgentRunner:
 
         def call_model_node(state: AgentState) -> Dict[str, Any]:
             system_prompt = (
-                "You are a helpful and precise insurance assistant. Your main task is to answer questions "
-                "about insurance policies based on the policy documents provided below. "
-                "If the question can be answered directly from the information, do so concisely. "
-                "If the user asks for a mathematical operation, use the 'calculator' tool. "
-                "If you cannot answer based on the context or your tools, state that you do not have that information. "
+                "You are a helpful and precise insurance assistant. "
+                "Your main task is to answer questions about insurance policies.\n"
+                "First, ALWAYS check the policy documents provided below (if any).\n"
+                "If the provided documents don't answer the question, or the user asks a new question about policies, "
+                "use the 'hybrid_opensearch_search' tool to find relevant policy information.\n"
+                "If the user asks for up-to-date information, news, or general topics not related to policies, "
+                "use the 'web_search' tool.\n"
+                "If the user asks for a mathematical operation, use the 'calculator' tool.\n"
+                "If you cannot answer based on the context or your tools, state that you do not have that information.\n"
                 "You must always respond in English."
             )
             context_block = "\n\n## Policy Documents:\n" + "\n\n".join(
@@ -79,12 +90,42 @@ class AgentRunner:
         def call_tool_node(state: AgentState) -> Dict[str, Any]:
             tool_calls = state["messages"][-1].tool_calls
             tool_outputs = []
+            
+            new_structured_sources = []
+
             for tool_call in tool_calls:
                 tool = next((t for t in AGENT_TOOLS if t.name == tool_call["name"]), None)
+                
                 if tool:
                     output = tool.invoke(tool_call["args"])
+                    if tool.name in ("hybrid_opensearch_search", "web_search"):
+                        if isinstance(output, list):
+                            
+                            for i, item in enumerate(output):
+                                if hasattr(item, "page_content"):
+                                    src = {
+                                        "title": item.metadata.get("file_name", item.metadata.get("source", "Source")),
+                                        "snippet": item.page_content,
+                                        "url": item.metadata.get("url"),
+                                    }
+                                    new_structured_sources.append(src)
+                                
+                                elif isinstance(item, dict):
+                                    src = {
+                                        "title": item.get("title"),
+                                        "snippet": item.get("snippet"),
+                                        "url": item.get("url"),
+                                        "source": item.get("source"),
+                                    }
+                                    new_structured_sources.append(src)
+                        
+                        else:
+                            print(f"[ToolNode] ADVERTENCIA: {tool.name} no devolvió una lista, no se capturaron fuentes.", file=sys.stderr)
+                    
                     tool_outputs.append(ToolMessage(content=str(output), tool_call_id=tool_call["id"]))
-            return {"messages": tool_outputs}
+            
+            return {"messages": tool_outputs, "contexts": new_structured_sources}
+
 
         def router(state: AgentState) -> str:
             if state["messages"][-1].tool_calls:
@@ -117,7 +158,7 @@ class AgentRunner:
 
         return {
             "answer": answer,
-            "sources": contexts, 
+            "sources": final_state.get("contexts", []),
         }
 
 _agent_runner_instance = AgentRunner()

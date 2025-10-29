@@ -1,0 +1,13 @@
+# --- Data & OpenSearch setup ---
+opensearch-py>=2.6
+pandas>=2.0
+pypdf>=4.2
+
+# --- LangChain ingestion ---
+langchain-community>=0.3,<0.5
+langchain-text-splitters>=0.3,<2
+langchain-huggingface>=0.1,<2
+sentence-transformers>=2.7
+
+# --- Tests ---
+pytest>=8

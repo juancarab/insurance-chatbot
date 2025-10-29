@@ -8,7 +8,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from .config import Settings, get_settings
+import logging
 
+logging.basicConfig(level=logging.ERROR)
 
 class Message(BaseModel):
     """Represents a chat message."""
@@ -40,8 +42,7 @@ class ChatRequest(BaseModel):
 
 class Source(BaseModel):
     """A retrieved source used to craft the answer."""
-
-    id: str
+    id: Optional[str] = None
     title: str
     snippet: str
     url: Optional[str] = None
@@ -56,37 +57,6 @@ class ChatResponse(BaseModel):
         default_factory=dict,
         description="Implementation-specific diagnostics (latency, token counts, etc.).",
     )
-
-
-class PolicyRetriever:
-    """Stub retriever that mimics returning policy snippets."""
-
-    def search(self, query: str, *, top_k: int) -> List[Source]:
-        # This is a pure mock that returns deterministic placeholder data.
-        return [
-            Source(
-                id=f"policy-{i+1}",
-                title=f"Mock Policy Document {i+1}",
-                snippet=f"Relevant excerpt {i+1} for query: '{query}'.",
-                url=f"https://example.com/policies/{i+1}",
-            )
-            for i in range(top_k)
-        ]
-
-
-class WebSearchClient:
-    """Stub client for optional web search fallback."""
-
-    def search(self, query: str) -> List[Source]:
-        return [
-            Source(
-                id="web-1",
-                title="Mock Web Result",
-                snippet=f"Web search result related to '{query}'.",
-                url="https://search.example.com/mock",
-            )
-        ]
-
 
 class AnswerFormatterProtocol(Protocol):
     """
@@ -159,7 +129,8 @@ class LangChainAgentFormatter:
                 messages=[message.dict() for message in messages],
                 contexts=[source.dict() for source in contexts],
             )
-        except Exception as exc: 
+        except Exception as exc:
+            logging.error("LangChain runner failed to generate a response", exc_info=True)
             raise RuntimeError("LangChain runner failed to generate a response.") from exc
 
         if isinstance(result, dict) and "answer" in result:
@@ -177,72 +148,55 @@ class LangChainAgentFormatter:
 
 
 class GeminiAnswerFormatter:
-    """Formatter that delegates response generation to Google Gemini."""
+    """Formatter que delega a Google Gemini (SDK nuevo: google-genai)."""
 
-    def __init__(self, model: Any):
-        self._model = model
+    def __init__(self, client, model_name: str, generation_config: Dict[str, Any]):
+        self._client = client
+        self._model_name = model_name
+        self._generation_config = generation_config or {}
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "GeminiAnswerFormatter":
-        """Configure the Gemini client using application settings."""
-
         try:
-            import google.generativeai as genai
-        except ImportError as exc:  
+            from google import genai  # SDK nuevo
+        except ImportError as exc:
             raise RuntimeError(
-                "google-generativeai must be installed to use the Gemini formatter."
+                "Para usar el formatter Gemini instala el SDK nuevo: `pip install google-genai`."
             ) from exc
 
         api_key = settings.gemini_api_key
         if not api_key:
-            raise RuntimeError(
-                "GEMINI_API_KEY must be set when INSURANCE_CHATBOT_FORMATTER=gemini."
-            )
+            raise RuntimeError("GEMINI_API_KEY debe estar configurado.")
 
         model_name = settings.gemini_model
         if not model_name:
-            raise RuntimeError(
-                "GEMINI_MODEL must be set when INSURANCE_CHATBOT_FORMATTER=gemini."
-            )
+            raise RuntimeError("GEMINI_MODEL debe estar configurado.")
 
-        genai.configure(api_key=api_key)
+        client = genai.Client(api_key=api_key)
 
         generation_config: Dict[str, Any] = {}
         if settings.gemini_temperature is not None:
             generation_config["temperature"] = settings.gemini_temperature
-
         if settings.gemini_top_p is not None:
             generation_config["top_p"] = settings.gemini_top_p
-
         if settings.gemini_max_output_tokens is not None:
             generation_config["max_output_tokens"] = settings.gemini_max_output_tokens
 
-        model = genai.GenerativeModel(
-            model_name,
-            generation_config=generation_config or None,
-        )
-
-        return cls(model=model)
+        return cls(client=client, model_name=model_name, generation_config=generation_config)
 
     def format_answer(self, messages: List[Message], contexts: List[Source]) -> str:
-        conversation = "\n".join(
-            f"{message.role.upper()}: {message.content}" for message in messages
-        )
+        conversation = "\n".join(f"{m.role.upper()}: {m.content}" for m in messages)
 
         if contexts:
-            context_block = "\n".join(
-                f"{source.title}: {source.snippet}" for source in contexts
-            )
-            context_prompt = (
-                f"Relevant policy snippets:\n{context_block}\n\n"
-            )
+            ctx = "\n".join(f"{s.title}: {s.snippet}" for s in contexts)
+            context_prompt = f"Relevant policy snippets:\n{ctx}\n\n"
         else:
             context_prompt = "No policy snippets were retrieved for this turn.\n\n"
 
         system_prompt = (
-            "You are an insurance assistant. Provide concise, accurate answers grounded in the"
-            " provided policy snippets. If the context does not contain the answer, say you"
-            " do not know. Respond in the same language as the user."
+            "You are an insurance assistant. Provide concise, accurate answers grounded in the "
+            "provided policy snippets. If the context does not contain the answer, say you do not know. "
+            "Respond in the same language as the user."
         )
 
         composed_prompt = (
@@ -252,26 +206,29 @@ class GeminiAnswerFormatter:
         )
 
         try:
-            response = self._model.generate_content(composed_prompt)
-        except Exception as exc:  
-            raise RuntimeError("Gemini failed to generate a response.") from exc
+            resp = self._client.models.generate_content(
+                model=self._model_name,
+                contents=composed_prompt,
+                config=self._generation_config or None,
+            )
+        except Exception as exc:
+            raise RuntimeError("Gemini falló al generar la respuesta.") from exc
 
-        text_response = getattr(response, "text", None)
+        # SDK nuevo: texto directo en resp.text
+        text = getattr(resp, "text", None)
+        if not text and getattr(resp, "candidates", None):
+            parts = []
+            for cand in resp.candidates:
+                for part in getattr(cand.content, "parts", []):
+                    v = getattr(part, "text", None)
+                    if v:
+                        parts.append(v)
+            text = "\n".join(parts)
 
-        if not text_response and getattr(response, "candidates", None):
-            parts: List[str] = []
-            for candidate in response.candidates:
-                for part in getattr(candidate.content, "parts", []):
-                    value = getattr(part, "text", None)
-                    if value:
-                        parts.append(value)
-            text_response = "\n".join(parts)
+        if not text:
+            raise RuntimeError("Gemini retornó una respuesta vacía.")
 
-        if not text_response:
-            raise RuntimeError("Gemini returned an empty response.")
-
-        return text_response.strip()
-
+        return text.strip()
 
 def build_formatter(settings: Settings) -> AnswerFormatterProtocol:
     """Return the formatter strategy indicated by configuration."""
@@ -283,11 +240,8 @@ def build_formatter(settings: Settings) -> AnswerFormatterProtocol:
 
 
 app = FastAPI(title="Insurance Chatbot API", version="0.1.0")
-retriever = PolicyRetriever()
 settings = get_settings()
 formatter = build_formatter(settings)
-web_search = WebSearchClient()
-
 
 @app.post("/chat", response_model=ChatResponse)
 def chat_endpoint(request: ChatRequest) -> ChatResponse:
@@ -299,10 +253,9 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
             status_code=400,
             detail="The latest message in the conversation must come from the user.",
         )
-    retrieved_sources = retriever.search(latest_message.content, top_k=request.top_k)
-    if request.enable_web_search:
-        retrieved_sources.extend(web_search.search(latest_message.content))
     
+    retrieved_sources = []
+
     formatted_result = formatter.format_answer(request.messages, retrieved_sources)
 
     if isinstance(formatted_result, dict):
@@ -314,7 +267,7 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
         final_sources = retrieved_sources
 
     usage = {
-        "retrieved_documents": len(retrieved_sources),
+        "retrieved_documents": len(final_sources),
         "web_search_enabled": request.enable_web_search,
         "formatter": settings.formatter,
     }
