@@ -2,88 +2,114 @@
 from __future__ import annotations
 
 import importlib
+import logging
 from typing import Any, Callable, Dict, List, Literal, Optional, Protocol
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from .config import Settings, get_settings
-import logging
 
 logging.basicConfig(level=logging.ERROR)
 
 class Message(BaseModel):
     """Represents a chat message."""
-
     role: Literal["user", "assistant", "system"]
     content: str
 
 
 class ChatRequest(BaseModel):
     """Input payload for the /chat endpoint."""
-
     messages: List[Message] = Field(
         ..., description="Ordered list of chat messages, latest last."
     )
+
+    query: str = Field(
+        "",
+        description="Último mensaje del usuario (opcional si ya viene en messages)"
+    )
+
     top_k: int = Field(
-        3,
-        ge=1,
-        le=10,
-        description="Number of policy snippets to retrieve for grounding.",
+        4, ge=1, le=10,
+        description="Número de fragmentos a recuperar para grounding."
     )
     enable_web_search: bool = Field(
         False,
-        description="Whether to allow the backend to use a web-search fallback.",
+        description="Permite o no el uso de la herramienta de búsqueda web."
     )
+
     metadata: Optional[Dict[str, Any]] = Field(
-        default=None, description="Optional client-provided metadata."
+        default=None, description="Metadatos opcionales enviados por el cliente."
     )
+
+    debug: bool = False
+    language: str = "es"
 
 
 class Source(BaseModel):
     """A retrieved source used to craft the answer."""
     id: Optional[str] = None
-    title: str
-    snippet: str
+    title: Optional[str] = None
+    snippet: Optional[str] = None 
     url: Optional[str] = None
+    file_name: Optional[str] = None
+    page: Optional[int] = None
+    chunk_id: Optional[str | int] = None
+    score: Optional[float] = None
 
 
 class ChatResponse(BaseModel):
     """Response structure for the /chat endpoint."""
-
     answer: str
-    sources: List[Source]
-    usage: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Implementation-specific diagnostics (latency, token counts, etc.).",
-    )
+    sources: List[Source] = []
+    usage: Optional[dict] = None
+    debug: Optional[dict] = None
+
 
 class AnswerFormatterProtocol(Protocol):
     """
     Interface implemented by all answer formatter strategies.
     A formatter can return a simple string or a dictionary for richer responses.
     """
-    def format_answer(self, messages: List[Message], contexts: List[Source]) -> Dict[str, Any] | str:
+    def format_answer(
+        self,
+        messages: List[Message],
+        contexts: List[Source],
+        *,
+        top_k: int,
+        enable_web_search: bool,
+        debug: bool,
+        language: str,
+    ) -> Dict[str, Any] | str:
         """Return the assistant message given the conversation and retrieved sources."""
 
 
 class MockAnswerFormatter:
     """Stub answer formatter that would normally invoke an LLM."""
 
-    def format_answer(self, messages: List[Message], contexts: List[Source]) -> str:
+    def format_answer(
+        self,
+        messages: List[Message],
+        contexts: List[Source],
+        *,
+        top_k: int,
+        enable_web_search: bool,
+        debug: bool,
+        language: str,
+    ) -> str:
         latest_user_message = next(
             (message for message in reversed(messages) if message.role == "user"),
             None,
         )
-        question = latest_user_message.content if latest_user_message else "your question"
+        question = latest_user_message.content if latest_user_message else "tu pregunta"
         bullet_points = "\n".join(
-            f"- {source.title}: {source.snippet}" for source in contexts
+            f"- {s.title or s.file_name or 'Fuente'}: {(s.snippet or '').strip()}"
+            for s in contexts
         )
         return (
-            "This is a placeholder answer. Once the LLM formatter is integrated, "
-            "it will generate a detailed response grounded on the retrieved "
-            "policy documents.\n\n"
-            f"For now, here's what we found related to '{question}':\n{bullet_points}"
+            f"(mock) Respondiendo en {language}. "
+            "Cuando el LLM esté integrado, generará una respuesta fundamentada en las fuentes.\n\n"
+            f"Consulta: '{question}'\n{bullet_points}"
         )
 
 
@@ -119,32 +145,50 @@ class LangChainAgentFormatter:
             )
         return cls(runner)
 
-    def format_answer(self, messages: List[Message], contexts: List[Source]) -> Dict[str, Any]:
+    def format_answer(
+        self,
+        messages: List[Message],
+        contexts: List[Source],
+        *,
+        top_k: int,
+        enable_web_search: bool,
+        debug: bool,
+        language: str,
+    ) -> Dict[str, Any]:
         """
-        Invokes the LangChain runner and expects a dictionary containing at least 'answer'.
-        The runner can also override 'sources' if needed.
+        Invokes the LangChain/LangGraph runner and expects a dict with 'answer'.
+        The runner can also override 'sources' and include 'usage'/'debug'.
         """
         try:
             result = self._runner(
-                messages=[message.dict() for message in messages],
-                contexts=[source.dict() for source in contexts],
+                messages=[m.dict() for m in messages],
+                contexts=[s.dict() for s in contexts],
+                top_k=top_k,
+                enable_web_search=enable_web_search,
+                debug=debug,
+                language=language,
             )
         except Exception as exc:
             logging.error("LangChain runner failed to generate a response", exc_info=True)
             raise RuntimeError("LangChain runner failed to generate a response.") from exc
 
-        if isinstance(result, dict) and "answer" in result:
-            return {
-                "answer": str(result["answer"]),
-                "sources": result.get("sources", [source.dict() for source in contexts]),
-            }
         if isinstance(result, dict):
-            for key in ("output", "answer", "result", "content"):
-                if key in result:
-                    return {"answer": str(result[key]), "sources": [source.dict() for source in contexts]}
-            return {"answer": str(result), "sources": [source.dict() for source in contexts]}
+            answer = str(
+                result.get(
+                    "answer",
+                    result.get("output", result.get("result", result.get("content", ""))),
+                )
+            )
+            sources = result.get("sources", [s.dict() for s in contexts])
+            out: Dict[str, Any] = {"answer": answer, "sources": sources}
 
-        return {"answer": str(result), "sources": [source.dict() for source in contexts]}
+            if "usage" in result:
+                out["usage"] = result["usage"]
+            if "debug" in result:
+                out["debug"] = result["debug"]
+            return out
+
+        return {"answer": str(result), "sources": [s.dict() for s in contexts]}
 
 
 class GeminiAnswerFormatter:
@@ -161,7 +205,7 @@ class GeminiAnswerFormatter:
             from google import genai  # SDK nuevo
         except ImportError as exc:
             raise RuntimeError(
-                "Para usar el formatter Gemini instala el SDK nuevo: `pip install google-genai`."
+                "Para usar el formatter Gemini instala el SDK: `pip install google-genai`."
             ) from exc
 
         api_key = settings.gemini_api_key
@@ -184,25 +228,37 @@ class GeminiAnswerFormatter:
 
         return cls(client=client, model_name=model_name, generation_config=generation_config)
 
-    def format_answer(self, messages: List[Message], contexts: List[Source]) -> str:
+    def format_answer(
+        self,
+        messages: List[Message],
+        contexts: List[Source],
+        *,
+        top_k: int,
+        enable_web_search: bool,
+        debug: bool,
+        language: str,
+    ) -> str:
         conversation = "\n".join(f"{m.role.upper()}: {m.content}" for m in messages)
 
         if contexts:
-            ctx = "\n".join(f"{s.title}: {s.snippet}" for s in contexts)
-            context_prompt = f"Relevant policy snippets:\n{ctx}\n\n"
+            ctx = "\n".join(
+                f"{(s.title or s.file_name or 'Fuente')}: {(s.snippet or '').strip()}"
+                for s in contexts
+            )
+            context_prompt = f"Fragmentos relevantes:\n{ctx}\n\n"
         else:
-            context_prompt = "No policy snippets were retrieved for this turn.\n\n"
+            context_prompt = "No se recuperaron fragmentos de pólizas para este turno.\n\n"
 
         system_prompt = (
-            "You are an insurance assistant. Provide concise, accurate answers grounded in the "
-            "provided policy snippets. If the context does not contain the answer, say you do not know. "
-            "Respond in the same language as the user."
+            "Eres un asistente de seguros. Proporciona respuestas concisas y exactas usando los fragmentos "
+            "proporcionados. Si el contexto no contiene la respuesta, di que no lo sabes. "
+            f"Responde SIEMPRE en {language}."
         )
 
         composed_prompt = (
             f"{system_prompt}\n\n"
-            f"{context_prompt}Conversation history:\n{conversation}\n\n"
-            "Assistant response:"
+            f"{context_prompt}Historial de conversación:\n{conversation}\n\n"
+            "Respuesta del asistente:"
         )
 
         try:
@@ -214,10 +270,9 @@ class GeminiAnswerFormatter:
         except Exception as exc:
             raise RuntimeError("Gemini falló al generar la respuesta.") from exc
 
-        # SDK nuevo: texto directo en resp.text
         text = getattr(resp, "text", None)
         if not text and getattr(resp, "candidates", None):
-            parts = []
+            parts: List[str] = []
             for cand in resp.candidates:
                 for part in getattr(cand.content, "parts", []):
                     v = getattr(part, "text", None)
@@ -239,7 +294,7 @@ def build_formatter(settings: Settings) -> AnswerFormatterProtocol:
     return MockAnswerFormatter()
 
 
-app = FastAPI(title="Insurance Chatbot API", version="0.1.0")
+app = FastAPI(title="Insurance Chatbot API", version="0.2.0")
 settings = get_settings()
 formatter = build_formatter(settings)
 
@@ -253,39 +308,65 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
             status_code=400,
             detail="The latest message in the conversation must come from the user.",
         )
-    
-    retrieved_sources = []
 
-    formatted_result = formatter.format_answer(request.messages, retrieved_sources)
+    retrieved_sources: List[Source] = []
 
+    formatted_result = formatter.format_answer(
+        request.messages,
+        retrieved_sources,
+        top_k=request.top_k,
+        enable_web_search=request.enable_web_search,
+        debug=request.debug,
+        language=request.language,
+    )
+
+    # Normaliza respuesta
     if isinstance(formatted_result, dict):
-        answer = formatted_result.get("answer", "Error: The model response did not contain 'answer'.")
+        answer = formatted_result.get(
+            "answer", "Error: The model response did not contain 'answer'."
+        )
         final_sources_data = formatted_result.get("sources", [])
-        final_sources = [Source(**s) for s in final_sources_data]
-    else:
-        answer = str(formatted_result)
-        final_sources = retrieved_sources
+        final_sources: List[Source] = [
+            Source(**s) if isinstance(s, dict) else s for s in final_sources_data
+        ]
 
+        usage = formatted_result.get("usage", {}) or {}
+        # baseline si falta
+        usage.setdefault("retrieved_documents", len(final_sources))
+        usage.setdefault("web_search_enabled", request.enable_web_search)
+        usage.setdefault("formatter", settings.formatter)
+        usage.setdefault("language", request.language)
+        usage.setdefault("top_k", request.top_k)
+
+        return ChatResponse(
+            answer=answer,
+            sources=final_sources,
+            usage=usage,
+            debug=formatted_result.get("debug"),
+        )
+
+    # Respuesta plana (mock/gemini simple)
     usage = {
-        "retrieved_documents": len(final_sources),
+        "retrieved_documents": len(retrieved_sources),
         "web_search_enabled": request.enable_web_search,
         "formatter": settings.formatter,
+        "language": request.language,
+        "top_k": request.top_k,
     }
-    return ChatResponse(answer=answer, sources=final_sources, usage=usage)
+    return ChatResponse(answer=str(formatted_result), sources=retrieved_sources, usage=usage)
 
 
 @app.get("/chat", include_in_schema=False)
 def chat_get_landing() -> Dict[str, Any]:
     """Helpful response for accidental GET requests to /chat."""
-
     return {
         "message": "Use POST /chat with a ChatRequest payload to talk to the bot.",
         "example_request": {
-            "messages": [
-                {"role": "user", "content": "What does the policy cover?"}
-            ],
-            "top_k": 3,
+            "messages": [{"role": "user", "content": "¿Qué cubre la póliza?"}],
+            "top_k": 4,
             "enable_web_search": False,
+            "debug": False,
+            "language": "es",
         },
         "schema_docs": "/docs#/default/chat_endpoint_chat__post",
     }
@@ -294,7 +375,6 @@ def chat_get_landing() -> Dict[str, Any]:
 @app.get("/", include_in_schema=False)
 def root() -> Dict[str, str]:
     """Simple landing endpoint for manual pokes at the API root."""
-
     return {
         "message": "Insurance Chatbot API is running. Use POST /chat or visit /docs.",
         "docs_url": "/docs",
