@@ -56,8 +56,8 @@ Crea un archivo **`.env`** en la raíz (puedes partir de `.env.example` si exist
 
 ```env
 # --- OpenSearch ---
-# Docker Compose: host 'opensearch' | Ejecución local: 'localhost'
-OPENSEARCH_HOST=opensearch
+# Docker Compose: host 'opensearch' | Ejecución local: 'http://localhost:9200'
+OPENSEARCH_HOST=http://localhost:9200
 OPENSEARCH_PORT=9200
 OPENSEARCH_INDEX=policies
 OPENSEARCH_EMBED_DIM=384
@@ -79,11 +79,11 @@ GEMINI_TOP_P=0.95
 GEMINI_MAX_OUTPUT_TOKENS=1024
 
 # --- LangChain (si usas INSURANCE_CHATBOT_FORMATTER=langchain) ---
-# Con PYTHONPATH=services, el runner vive en agent.app.langchain_runner
-INSURANCE_CHATBOT_LANGCHAIN_RUNNER=agent.app.langchain_runner:run_langchain_agent
+# Con PYTHONPATH=services, el runner vive en services.agent.app.langchain_runner
+INSURANCE_CHATBOT_LANGCHAIN_RUNNER=services.agent.app.langchain_runner:run_langchain_agent
 ```
 
-> **Nota**: si ejecutas TODO fuera de Docker y OpenSearch corre local, cambia `OPENSEARCH_HOST=localhost`.
+> **Nota**: si levantas el stack con Docker Compose, cambia `OPENSEARCH_HOST` a `opensearch` (el nombre del servicio); para ejecución local directa, deja `http://localhost:9200`.
 
 ---
 
@@ -124,25 +124,17 @@ INSURANCE_CHATBOT_LANGCHAIN_RUNNER=agent.app.langchain_runner:run_langchain_agen
     source .venv/bin/activate        # Windows: .venv\Scripts\activate
     ```
 
-2) **Instalar dependencias**  
-    Opción A (por servicio, recomendado en monorepo):
-    ```bash
-    pip install -r services/backend/requirements.txt
-    pip install -r services/frontend/requirements.txt
-    pip install -r services/agent/requirements.txt
-    pip install -r data/requirements.txt     # para scripts de setup/ingesta/tests de OpenSearch
-    ```
-    Opción B (si tu `requirements.txt` raíz consolida todo):
+2) **Instalar dependencias**
     ```bash
     pip install -r requirements.txt
     ```
 
-3) **Arrancar OpenSearch** (puedes usar Docker aunque no uses todo el compose):
+3) **Arrancar OpenSearch** (usa Docker si no tienes un cluster local):
     ```bash
     docker compose up -d opensearch
     ```
 
-4) **Crear índice e ingestar**:
+4) **Crear índice e ingerir pólizas** (los PDFs deben estar en `data/raw_policies/`):
     ```bash
     python data/opensearch/setup_opensearch.py
     python data/pipeline/ingest.py
@@ -150,16 +142,15 @@ INSURANCE_CHATBOT_LANGCHAIN_RUNNER=agent.app.langchain_runner:run_langchain_agen
 
 5) **Backend** (desde la raíz del repo):
     ```bash
-    # Necesitamos que 'backend' sea paquete top-level: usa PYTHONPATH=services
-    PYTHONPATH=services uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+    PYTHONPATH=services uvicorn services.backend.app.main:app --reload --host 0.0.0.0 --port 8001
     ```
 
 6) **Frontend** (otra terminal):
     ```bash
+    export INSURANCE_CHATBOT_API_URL=http://127.0.0.1:8001/chat
     streamlit run services/frontend/app.py --server.port 8501
-    # (Opcional) URL del backend para el frontend:
-    # export INSURANCE_CHATBOT_API_URL=http://localhost:8000/chat
     ```
+    - Activa la casilla “Modo debug” en el sidebar para ver los pasos del agente (`debug.steps`) y las fuentes recuperadas en los expanders correspondientes.
 
 ---
 
@@ -274,7 +265,7 @@ GEMINI_MODEL=gemini-2.5-flash
 ### 3) LangChain + Tools (retrieval + web search)
 ```env
 INSURANCE_CHATBOT_FORMATTER=langchain
-INSURANCE_CHATBOT_LANGCHAIN_RUNNER=agent.app.langchain_runner:run_langchain_agent
+INSURANCE_CHATBOT_LANGCHAIN_RUNNER=services.agent.app.langchain_runner:run_langchain_agent
 TAVILY_API_KEY=tu_api_key             # para web search real
 OPENSEARCH_HOST=opensearch|localhost  # según tu modo
 ```
