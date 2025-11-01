@@ -16,8 +16,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
-from agent.app.tools.web_search.web_search import WebSearchTool
-from agent.app.tools.retrieval.haystack_opensearch_tool import retrieval_tool
+from .tools.web_search.web_search import WebSearchTool
+from .tools.retrieval.haystack_opensearch_tool import retrieval_tool
 
 from .config import get_settings
 

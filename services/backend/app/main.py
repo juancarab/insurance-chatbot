@@ -96,7 +96,7 @@ class MockAnswerFormatter:
         enable_web_search: bool,
         debug: bool,
         language: str,
-    ) -> str:
+    ) -> Dict[str, Any] | str:
         latest_user_message = next(
             (message for message in reversed(messages) if message.role == "user"),
             None,
@@ -106,11 +106,25 @@ class MockAnswerFormatter:
             f"- {s.title or s.file_name or 'Fuente'}: {(s.snippet or '').strip()}"
             for s in contexts
         )
-        return (
+        answer = (
             f"(mock) Respondiendo en {language}. "
             "Cuando el LLM esté integrado, generará una respuesta fundamentada en las fuentes.\n\n"
             f"Consulta: '{question}'\n{bullet_points}"
         )
+
+        if debug:
+            sources_payload = [s.dict() for s in contexts]
+            debug_payload: Dict[str, Any] = {
+                "formatter": "mock",
+                "messages": [m.dict() for m in messages],
+                "contexts": sources_payload,
+                "top_k": top_k,
+                "enable_web_search": enable_web_search,
+                "language": language,
+            }
+            return {"answer": answer, "sources": sources_payload, "debug": debug_payload}
+
+        return answer
 
 
 class LangChainAgentFormatter:
@@ -283,7 +297,20 @@ class GeminiAnswerFormatter:
         if not text:
             raise RuntimeError("Gemini retornó una respuesta vacía.")
 
-        return text.strip()
+        answer = text.strip()
+        if debug:
+            return {
+                "answer": answer,
+                "sources": [s.dict() for s in contexts],
+                "debug": {
+                    "formatter": "gemini",
+                    "model": self._model_name,
+                    "prompt": composed_prompt,
+                    "generation_config": self._generation_config or {},
+                },
+            }
+
+        return answer
 
 def build_formatter(settings: Settings) -> AnswerFormatterProtocol:
     """Return the formatter strategy indicated by configuration."""
@@ -337,12 +364,19 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
         usage.setdefault("formatter", settings.formatter)
         usage.setdefault("language", request.language)
         usage.setdefault("top_k", request.top_k)
+        usage.setdefault("debug_enabled", request.debug)
+
+        debug_payload: Optional[dict] = None
+        if request.debug:
+            debug_payload = formatted_result.get("debug")
+            if debug_payload is None:
+                debug_payload = {}
 
         return ChatResponse(
             answer=answer,
             sources=final_sources,
             usage=usage,
-            debug=formatted_result.get("debug"),
+            debug=debug_payload,
         )
 
     # Respuesta plana (mock/gemini simple)
@@ -353,7 +387,13 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
         "language": request.language,
         "top_k": request.top_k,
     }
-    return ChatResponse(answer=str(formatted_result), sources=retrieved_sources, usage=usage)
+    debug_payload = {} if request.debug else None
+    return ChatResponse(
+        answer=str(formatted_result),
+        sources=retrieved_sources,
+        usage=usage,
+        debug=debug_payload,
+    )
 
 
 @app.get("/chat", include_in_schema=False)

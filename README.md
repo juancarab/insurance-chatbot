@@ -207,6 +207,51 @@ INSURANCE_CHATBOT_LANGCHAIN_RUNNER=agent.app.langchain_runner:run_langchain_agen
 - `sources`: contrato para trazabilidad/justificación.
 - `usage`: métricas diagnósticas (puedes ampliarlo).
 
+### Ejemplo con `debug=true`
+
+```bash
+curl -s -X POST "http://localhost:8000/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "messages": [
+          {"role": "user", "content": "¿Qué cubre la póliza de hogar básica?"}
+        ],
+        "top_k": 3,
+        "enable_web_search": false,
+        "debug": true,
+        "language": "es"
+      }'
+```
+
+Respuesta (ejemplo con formatter `langchain`/`mock`):
+
+```json
+{
+  "answer": "(mock) Respondiendo en es. Cuando el LLM esté integrado...",
+  "sources": [],
+  "usage": {
+    "retrieved_documents": 0,
+    "web_search_enabled": false,
+    "formatter": "langchain",
+    "language": "es",
+    "top_k": 3,
+    "debug_enabled": true
+  },
+  "debug": {
+    "formatter": "mock",
+    "messages": [
+      {"role": "user", "content": "¿Qué cubre la póliza de hogar básica?"}
+    ],
+    "contexts": [],
+    "top_k": 3,
+    "enable_web_search": false,
+    "language": "es"
+  }
+}
+```
+
+> Con un agente LangChain real, el bloque `debug` incluye los pasos del grafo, chunks recuperados, herramientas invocadas, etc.
+
 ---
 
 ## Selección de formateador (mock / Gemini / LangChain)
@@ -282,6 +327,21 @@ El runner vive en `services/agent/app/langchain_runner.py` y puede invocar:
   # o:
   python -m pytest -q
   ```
+
+### Golden Set (benchmark de respuestas)
+
+1. Asegúrate de tener el backend levantado en `http://127.0.0.1:8001` (o ajusta `--base-url`).
+2. Ejecuta el script de evaluación:
+   ```bash
+   python scripts/run_golden_set.py \
+     --base-url http://127.0.0.1:8001/chat \
+     --golden-set data/golden_set/golden_set.json \
+     --output results/golden_before.jsonl
+   ```
+   - El archivo `data/golden_set/golden_set.json` incluye 35 escenarios distribuidos en cinco categorías: `simple`, `follow_up`, `web`, `combined`, `negative`.
+   - El script crea una fila por pregunta con la respuesta del agente, tiempos y metadatos; por defecto guarda la corrida en `results/golden_<timestamp>.jsonl`.
+3. Implementa tus cambios (por ejemplo, Tarea 1 o 2) y vuelve a ejecutar el script para generar `results/golden_after.jsonl`.
+4. Compara ambos archivos (o analiza los campos `answer`, `sources`, `debug`, etc.) para cuantificar mejoras.
 
 ---
 

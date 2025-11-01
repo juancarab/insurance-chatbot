@@ -13,7 +13,7 @@ OPENSEARCH_USER = "admin"
 OPENSEARCH_PASSWORD = "admin"
 
 INDEX_NAME = "policies"
-PDF_DIR = "./raw_policies"
+PDF_DIR = "./data/raw_policies"
 CHUNK_SIZE = 600
 CHUNK_OVERLAP = 120
 

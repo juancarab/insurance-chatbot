@@ -13,7 +13,8 @@ class Settings(BaseSettings):
         "mock", validation_alias="INSURANCE_CHATBOT_FORMATTER"
     )
     langchain_runner: Optional[str] = Field(
-        default=None, validation_alias="INSURANCE_CHATBOT_LANGCHAIN_RUNNER"
+        default="services.agent.app.langchain_runner:run_langchain_agent",
+        validation_alias="INSURANCE_CHATBOT_LANGCHAIN_RUNNER",
     )
     gemini_api_key: Optional[str] = Field(default=None, validation_alias="GEMINI_API_KEY")
     gemini_model: Optional[str] = Field(default=None, validation_alias="GEMINI_MODEL")

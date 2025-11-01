@@ -1,0 +1,508 @@
+[
+  {
+    "id": "S01",
+    "category": "simple",
+    "description": "Cobertura básica de hospitalización",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Cuál es el límite anual de cobertura para hospitalización en mi póliza de gastos médicos mayores?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S02",
+    "category": "simple",
+    "description": "Coaseguro por emergencia",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Qué porcentaje de coaseguro aplica para emergencias en el extranjero?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S03",
+    "category": "simple",
+    "description": "Deducible consultas médicas",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Cuál es el deducible para consultas médicas generales?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S04",
+    "category": "simple",
+    "description": "Cobertura maternidad",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿La póliza incluye cobertura por maternidad y cuáles son los periodos de espera?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S05",
+    "category": "simple",
+    "description": "Cobertura ambulancia",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿El seguro cubre el servicio de ambulancia y hasta qué cantidad?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S06",
+    "category": "simple",
+    "description": "Red de hospitales",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Cuáles son los hospitales de la red preferente para cirugías mayores?"}
+      ],
+      "top_k": 5,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S07",
+    "category": "simple",
+    "description": "Prótesis ortopédicas",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿La póliza cubre prótesis ortopédicas y cuál es el tope anual?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S08",
+    "category": "simple",
+    "description": "Consultas preventivas",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Incluye consultas de medicina preventiva sin deducible?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S09",
+    "category": "simple",
+    "description": "Cobertura dental básica",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Qué tratamientos dentales preventivos están cubiertos?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S10",
+    "category": "simple",
+    "description": "Medicamentos post operatorios",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿El seguro reembolsa medicamentos post operatorios?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F01",
+    "category": "follow_up",
+    "description": "Seguimiento deducible",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Solicité una cirugía de rodilla y me confirmaron cobertura."},
+        {"role": "assistant", "content": "La cirugía de rodilla está cubierta con deducible de 20,000 MXN."},
+        {"role": "user", "content": "¿Ese deducible se reduce si uso un hospital de red preferente?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F02",
+    "category": "follow_up",
+    "description": "Seguimiento periodo de espera",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Estoy embarazada y contraté la póliza hace cuatro meses."},
+        {"role": "assistant", "content": "La póliza tiene un periodo de espera de 10 meses para maternidad."},
+        {"role": "user", "content": "¿Hay alguna excepción para adelantar la cobertura de maternidad?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F03",
+    "category": "follow_up",
+    "description": "Seguimiento terapia física",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Tuve una rehabilitación por accidente y agoté las 20 sesiones."},
+        {"role": "assistant", "content": "Efectivamente, la póliza cubre hasta 20 sesiones de fisioterapia."},
+        {"role": "user", "content": "¿Puedo comprar sesiones adicionales con descuento o reembolso parcial?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F04",
+    "category": "follow_up",
+    "description": "Seguimiento accidentes menores",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Me cubren gastos por fractura de muñeca."},
+        {"role": "assistant", "content": "Sí, la póliza cubre fracturas con un tope de 50,000 MXN."},
+        {"role": "user", "content": "¿La férula y las consultas de seguimiento están dentro de ese tope?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F05",
+    "category": "follow_up",
+    "description": "Seguimiento traslado aéreo",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Confirmaron que el seguro cubre traslado aéreo sanitario."},
+        {"role": "assistant", "content": "Correcto, se cubren vuelos sanitarios con tope de 15,000 USD por evento."},
+        {"role": "user", "content": "¿Ese tope es por evento o anual acumulado?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F06",
+    "category": "follow_up",
+    "description": "Seguimiento vacunas preventivas",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Recuerdo que la póliza cubre vacunas para adultos."},
+        {"role": "assistant", "content": "Así es, se cubren vacunas preventivas con un tope de 3,000 MXN al año."},
+        {"role": "user", "content": "¿Las vacunas de viaje también entran en ese tope?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F07",
+    "category": "follow_up",
+    "description": "Seguimiento segunda opinión",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "La póliza ofrece segunda opinión médica internacional."},
+        {"role": "assistant", "content": "Sí, puedes solicitar dos segundas opiniones por año calendario."},
+        {"role": "user", "content": "¿Esa segunda opinión incluye traducción de expedientes clínicos?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F08",
+    "category": "follow_up",
+    "description": "Seguimiento terapia psicológica",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Se cubren consultas psicológicas derivadas de accidente."},
+        {"role": "assistant", "content": "Exacto, hasta 12 sesiones al año."},
+        {"role": "user", "content": "¿Puedo usar las sesiones restantes del año anterior?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "W01",
+    "category": "web",
+    "description": "Cobertura pandemia actual",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿El seguro cubre pruebas de laboratorio para la enfermedad respiratoria que está circulando este año?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "W02",
+    "category": "web",
+    "description": "Nuevas regulaciones gobierno",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Qué cambios recientes anunció la autoridad de seguros para pólizas internacionales en 2024?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "W03",
+    "category": "web",
+    "description": "Noticias farmacéuticas",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Cuál es el precio promedio actual de los medicamentos genéricos para hipertensión según fuentes confiables?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "W04",
+    "category": "web",
+    "description": "Hospitales con mejor ranking",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Qué hospitales privados en México tienen mejor ranking en cirugía cardiovascular este año?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "W05",
+    "category": "web",
+    "description": "Disponibilidad de vacunas",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Hay campañas públicas actuales de vacunación contra influenza en mi ciudad?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "W06",
+    "category": "web",
+    "description": "Nuevos tratamientos aprobados",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Qué terapias para diabetes fueron aprobadas recientemente por la FDA y podrían estar cubiertas?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "C01",
+    "category": "combined",
+    "description": "Cobertura quirúrgica + disponibilidad",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Mi póliza cubre cirugía bariátrica y qué hospitales la realizan actualmente en CDMX?"}
+      ],
+      "top_k": 5,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "C02",
+    "category": "combined",
+    "description": "Medicamento específico",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿El seguro reembolsa Ozempic y dónde se consigue actualmente?"}
+      ],
+      "top_k": 5,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "C03",
+    "category": "combined",
+    "description": "Terapia oncológica",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Cuál es el tope de cobertura para inmunoterapia oncológica y qué centros recomendados realizan el tratamiento hoy?"}
+      ],
+      "top_k": 5,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "C04",
+    "category": "combined",
+    "description": "Accidente esquí",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Si tengo un accidente esquiando, ¿qué cubre la póliza y qué clínicas especializadas están disponibles en Vail este mes?"}
+      ],
+      "top_k": 5,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "C05",
+    "category": "combined",
+    "description": "Viaje internacional",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Qué cobertura tengo para hospitalización en Japón y qué hospitales recomendados hay en Tokio ahora mismo?"}
+      ],
+      "top_k": 5,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "C06",
+    "category": "combined",
+    "description": "Reembolso maternidad + políticas públicas",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Cuál es el reembolso por parto natural y qué apoyos públicos recientes existen para lactancia en mi país?"}
+      ],
+      "top_k": 5,
+      "enable_web_search": true,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "N01",
+    "category": "negative",
+    "description": "Política inexistente",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Cuál es la cobertura para viajes espaciales turísticos en mi póliza de auto?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "N02",
+    "category": "negative",
+    "description": "Pregunta fuera de dominio",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "¿Cuál es la mejor inversión en criptomonedas según mi aseguradora?"}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "N03",
+    "category": "negative",
+    "description": "Información no disponible",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Dame el número exacto de reclamaciones rechazadas por tu aseguradora en 2023."}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "N04",
+    "category": "negative",
+    "description": "Solicita datos personales",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Comparte los datos personales del director médico de la aseguradora."}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "N05",
+    "category": "negative",
+    "description": "Solicitud imposible",
+    "payload": {
+      "messages": [
+        {"role": "user", "content": "Reescribe completamente mi póliza para eliminar deducibles."}
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  }
+]
