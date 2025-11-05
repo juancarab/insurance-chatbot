@@ -168,3 +168,31 @@ def root() -> Dict[str, str]:
 @app.get("/health", tags=["health"])
 def healthcheck() -> Dict[str, str]:
     return {"status": "ok"}
+
+
+# # test errors in tools
+# from fastapi import Query
+# from dotenv import load_dotenv
+# from opensearchpy import OpenSearch
+# from backend.app.agent.tools.web_search import WebSearchTool, WebSearchInput
+# from backend.app.agent.tools.retriever_tool import HybridOpenSearchTool, RetrieverInput
+# import os
+
+# load_dotenv()
+
+# def make_os_client():
+#     host = os.getenv("OPENSEARCH_HOST", "opensearch")
+#     port = int(os.getenv("OPENSEARCH_PORT", "9200"))
+#     return OpenSearch(hosts=[{"host": host, "port": port}], use_ssl=False, verify_certs=False, timeout=20)
+
+# @app.get("/demo/retriever")
+# def demo_retriever(q: str = Query(...), k: int = 5):
+#     tool = HybridOpenSearchTool(client=make_os_client(), index_name=os.getenv("OPENSEARCH_INDEX", "policies"))
+#     out = tool.run(RetrieverInput(query=q, k=k).dict())
+#     return {"result": out}
+
+# @app.get("/demo/web_search")
+# def demo_web_search(q: str = Query(...), k: int = 3, freshness_days: int = 30):
+#     tool = WebSearchTool()
+#     out = tool.run(WebSearchInput(query=q, max_results=k, freshness_days=freshness_days).dict())
+#     return {"result": out}
