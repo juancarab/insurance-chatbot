@@ -22,6 +22,9 @@ RUN pip install torch==2.9.0 --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r /app/agent_requirements.txt \
  && pip install --no-cache-dir -r /app/backend_requirements.txt
 
+ARG EMBEDDING_MODEL
+RUN python -c "from haystack.components.embedders import SentenceTransformersTextEmbedder; SentenceTransformersTextEmbedder(model='${EMBEDDING_MODEL}')"
+
 COPY services/backend/app /app/backend/app
 COPY services/agent /app/agent
 

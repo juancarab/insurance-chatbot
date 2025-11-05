@@ -4,7 +4,6 @@ uvicorn[standard]>=0.30
 requests>=2.31
 pydantic>=2.7,<3
 python-dotenv>=1.0
-tavily-python
 
 # --- Frontend ---
 streamlit>=1.33
