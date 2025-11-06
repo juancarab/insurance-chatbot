@@ -1,57 +1,80 @@
-# ingest.py — versión simple
+# ingest.py — versión parametrizada por entorno
 import os, glob, argparse
 from typing import List, Dict
+
+# --- Carga .env si está disponible ---
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
 from opensearchpy import OpenSearch, helpers
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 
-# --- Config rápida ---
-OPENSEARCH_HOST = "localhost"
-OPENSEARCH_PORT = 9200
-OPENSEARCH_USER = "admin"
-OPENSEARCH_PASSWORD = "admin"
+# --- Config desde entorno ---
+OPENSEARCH_HOST = os.getenv("OPENSEARCH_HOST", "localhost")
+OPENSEARCH_PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
+OPENSEARCH_USER = os.getenv("OPENSEARCH_USER", "admin")
+OPENSEARCH_PASSWORD = os.getenv("OPENSEARCH_PASSWORD", "admin")
 
-INDEX_NAME = "policies"
-PDF_DIR = "./data/raw_policies"
-CHUNK_SIZE = 600
-CHUNK_OVERLAP = 120
+INDEX_NAME = os.getenv("OPENSEARCH_INDEX", "policies")
+PDF_DIR = os.getenv("PDF_DIR", "./data/raw_policies")
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "600"))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "120"))
 
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-EMBED_DIM = 384
-BATCH_SIZE = 128
+# Acepta EMBEDDING_MODEL (como en tu .env) o MODEL_NAME (fallback)
+MODEL_NAME = os.getenv("EMBEDDING_MODEL", os.getenv("MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2"))
+EMBED_DIM = int(os.getenv("OPENSEARCH_EMBED_DIM", "384"))
+BATCH_SIZE = int(os.getenv("EMBED_BATCH_SIZE", "128"))
 
-# --- Clientes ---
+# --- Cliente OpenSearch ---
 client = OpenSearch(
     hosts=[{"host": OPENSEARCH_HOST, "port": OPENSEARCH_PORT}],
     http_auth=(OPENSEARCH_USER, OPENSEARCH_PASSWORD),
     use_ssl=False, verify_certs=False, ssl_show_warn=False, ssl_assert_hostname=False,
 )
 
+# --- Cargador de embeddings ---
 embedder = HuggingFaceEmbeddings(
     model_name=MODEL_NAME,
     encode_kwargs={"normalize_embeddings": True, "batch_size": BATCH_SIZE},
 )
 
-# --- Índice (texto + vector) ---
+# --- Mapeo índice (texto + vector) ---
 MAPPING = {
-    "settings": {"index": {"knn": True, "number_of_shards": 1, "number_of_replicas": 0}},
-    "mappings": {"properties": {
-        "text": {"type": "text"},
-        "metadata": {"type": "object", "properties": {
-            "file_name": {"type": "keyword"},
-            "page": {"type": "integer"},
-            "chunk_id": {"type": "integer"},
-        }},
-        "embedding": {
-            "type": "knn_vector",
-            "dimension": EMBED_DIM,
-            "method": {
-                "name": "hnsw", "engine": "nmslib", "space_type": "cosinesimil",
-                "parameters": {"ef_construction": 128, "m": 24},
+    "settings": {
+        "index": {
+            "knn": True,
+            "number_of_shards": 1,
+            "number_of_replicas": 0
+        }
+    },
+    "mappings": {
+        "properties": {
+            "text": {"type": "text"},
+            "metadata": {
+                "type": "object",
+                "properties": {
+                    "file_name": {"type": "keyword"},
+                    "page": {"type": "integer"},
+                    "chunk_id": {"type": "integer"},
+                },
             },
-        },
-    }},
+            "embedding": {
+                "type": "knn_vector",
+                "dimension": EMBED_DIM,
+                "method": {
+                    "name": "hnsw",
+                    "engine": "nmslib",
+                    "space_type": "cosinesimil",
+                    "parameters": {"ef_construction": 128, "m": 24},
+                },
+            },
+        }
+    },
 }
 
 def ensure_index(recreate: bool) -> None:
@@ -126,7 +149,7 @@ if __name__ == "__main__":
     n = bulk_index(texts, metas)
 
     num_pdfs = len({p["file_name"] for p in pages})
-    print(f"Listo. PDFs={num_pdfs} | páginas={len(pages)} | chunks={n} | índice={INDEX_NAME} | chunk={CHUNK_SIZE}/{CHUNK_OVERLAP}")
+    print(f"Listo. PDFs={num_pdfs} | páginas={len(pages)} | chunks={n} | índice={INDEX_NAME} | chunk={CHUNK_SIZE}/{CHUNK_OVERLAP} | modelo={MODEL_NAME}")
 
     if args.test_query:
         knn_test(args.test_query)
