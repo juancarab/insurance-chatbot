@@ -1,0 +1,92 @@
+[
+  {
+    "id": "S01",
+    "category": "simple",
+    "description": "Cobertura básica de hospitalización",
+    "reference_answer": "La póliza de gastos médicos mayores cubre hospitalización hasta un límite anual de 1,000,000 MXN con un deducible único de 20,000 MXN y coaseguro del 10 % en red.",
+    "payload": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿Cuál es el límite anual de cobertura para hospitalización en mi póliza de gastos médicos mayores?"
+        }
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S02",
+    "category": "simple",
+    "description": "Coaseguro por emergencia",
+    "reference_answer": "Para emergencias en el extranjero aplica un coaseguro del 20 % con tope de 5,000 USD por evento, después de cumplir el deducible contratado.",
+    "payload": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿Qué porcentaje de coaseguro aplica para emergencias en el extranjero?"
+        }
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S03",
+    "category": "simple",
+    "description": "Deducible consultas médicas",
+    "reference_answer": "Las consultas médicas generales tienen un deducible preferente de 500 MXN por visita cuando se realizan dentro de la red médica del plan.",
+    "payload": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿Cuál es el deducible para consultas médicas generales?"
+        }
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S04",
+    "category": "simple",
+    "description": "Cobertura maternidad",
+    "reference_answer": "La cobertura de maternidad incluye prenatal, parto y postnatal con suma asegurada de 150,000 MXN, disponible tras un periodo de espera de 10 meses desde el alta de la póliza.",
+    "payload": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿La póliza incluye cobertura por maternidad y cuáles son los periodos de espera?"
+        }
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S05",
+    "category": "simple",
+    "description": "Cobertura ambulancia",
+    "reference_answer": "El seguro cubre ambulancia terrestre y aérea hasta 15,000 MXN por evento para traslados de emergencia autorizados por el centro de asistencia.",
+    "payload": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿El seguro cubre el servicio de ambulancia y hasta qué cantidad?"
+        }
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  }
+]
