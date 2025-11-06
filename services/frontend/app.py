@@ -114,6 +114,9 @@ def main() -> None:
     if prompt:
         st.session_state.messages.append({"role": "user", "content": prompt})
 
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
         payload = {
             "messages": st.session_state.messages,
             "top_k": config["top_k"],
@@ -123,7 +126,9 @@ def main() -> None:
         }
 
         try:
-            response = call_backend(config["api_url"], payload)
+            with st.spinner("Procesando tu consulta..."):
+                response = call_backend(config["api_url"], payload)
+
             answer = response.get("answer", "No se recibió respuesta del backend.")
             sources = response.get("sources", [])
             debug_info = response.get("debug")

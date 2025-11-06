@@ -5,27 +5,21 @@ from typing import List, Optional, Type
 
 from pydantic import BaseModel, Field, ConfigDict
 
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.callbacks import (
-    CallbackManagerForRetrieverRun,
-    CallbackManagerForToolRun,
-)
 from langchain_core.documents import Document
 from langchain_core.tools import BaseTool
+from langchain_core.callbacks import CallbackManagerForToolRun
 
 try:
-    from opensearch_haystack.document_store import OpenSearchDocumentStore 
-    from opensearch_haystack.retriever import (
-        OpenSearchHybridRetriever,
-    )
+    from opensearch_haystack.document_store import OpenSearchDocumentStore
+    from opensearch_haystack.retriever import OpenSearchHybridRetriever
+
     _OS_BACKEND = "opensearch_haystack"
 except ModuleNotFoundError:
-    from haystack_integrations.document_stores.opensearch import ( 
-        OpenSearchDocumentStore,
-    )
-    from haystack_integrations.components.retrievers.opensearch import ( 
+    from haystack_integrations.document_stores.opensearch import OpenSearchDocumentStore
+    from haystack_integrations.components.retrievers.opensearch import (
         OpenSearchHybridRetriever,
     )
+
     _OS_BACKEND = "haystack_integrations"
 
 from haystack.components.embedders import SentenceTransformersTextEmbedder
@@ -44,7 +38,7 @@ doc_store = OpenSearchDocumentStore(
     index=OPENSEARCH_INDEX,
     embedding_dim=EMBED_DIM,
     create_index=False,
-    content_field="text",
+    content_field="text",     
     embedding_field="embedding",
     metadata_field="metadata",
     knn_space_type="cosinesimil",
@@ -64,34 +58,53 @@ haystack_retriever_instance = OpenSearchHybridRetriever(
     join_mode="reciprocal_rank_fusion",
 )
 
+
 def _convert_docs(haystack_docs: List[HaystackDocument]) -> List[Document]:
+    """Convierte docs de Haystack al Document de LangChain asegurando que
+    el texto real vaya en page_content.
+    """
     out: List[Document] = []
     for h_doc in haystack_docs:
-        if h_doc.meta and "metadata" in h_doc.meta:
-            meta = dict(h_doc.meta["metadata"])
-            for k, v in (h_doc.meta or {}).items():
-                if k != "metadata":
-                    meta[k] = v
-        else:
-            meta = dict(h_doc.meta or {})
+        raw_meta = dict(h_doc.meta or {})
+        inner = raw_meta.pop("metadata", {}) if "metadata" in raw_meta else {}
+        meta = {**inner, **raw_meta}
+
         meta["score"] = getattr(h_doc, "score", None)
         meta["opensearch_backend"] = _OS_BACKEND
-        page_content = h_doc.content or ""
+
+        page_content = (
+            h_doc.content
+            or meta.get("text")
+            or meta.get("content")
+            or ""
+        )
+
+        meta.pop("text", None)
+        meta.pop("content", None)
+
         out.append(Document(page_content=page_content, metadata=meta))
-    print(out)
+
+    logger.debug("OpenSearch devolvió %d documentos", len(out))
     return out
 
+
 class RetrieverInput(BaseModel):
-    query: str = Field(description="User query to search insurance policy documents in OpenSearch")
-    k: Optional[int] = Field(None, description="Número de documentos a recuperar (anula el defecto)")
+    query: str = Field(
+        description="User query to search insurance policy documents in OpenSearch"
+    )
+    k: Optional[int] = Field(
+        None,
+        description="Número de documentos a recuperar (sobrescribe el defecto)",
+    )
+
 
 class HybridOpenSearchTool(BaseTool):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = "hybrid_opensearch_search"
     description: str = (
-        "Searches the OpenSearch index (BM25 + embeddings with RRF) and returns "
-        "a list of relevant policy documents with their metadata."
+        "Busca en el índice de OpenSearch (BM25 + embeddings con RRF) y devuelve "
+        "una lista de documentos de pólizas de seguros chilenos con su metadata (archivo, página, score)."
     )
     args_schema: Type[BaseModel] = RetrieverInput
     haystack_retriever: OpenSearchHybridRetriever
@@ -103,16 +116,31 @@ class HybridOpenSearchTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> List[Document]:
         try:
-            k_value = k or 5
+            # el usuario quiere k docs finales
+            k_user = k or 5
+            # pero para fusionar es mejor traer un poco más
+            bm25_k = max(k_user, 10)
+            emb_k = max(k_user, 10)
+
             results = self.haystack_retriever.run(
                 query=query,
-                top_k_bm25=k_value,
-                top_k_embedding=k_value
+                top_k_bm25=bm25_k,
+                top_k_embedding=emb_k,
             )
-            return _convert_docs(results.get("documents", []))
+            docs = _convert_docs(results.get("documents", []))
+            return docs[:k_user]
         except Exception as e:
             logger.exception("HybridOpenSearchTool._run failed: %s", e)
-            return []
+            # devolvemos un doc de error para que el agente pueda decirlo
+            return [
+                Document(
+                    page_content="No se pudo consultar OpenSearch.",
+                    metadata={
+                        "error": str(e),
+                        "opensearch_backend": _OS_BACKEND,
+                    },
+                )
+            ]
 
     async def _arun(
         self,
@@ -121,17 +149,30 @@ class HybridOpenSearchTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> List[Document]:
         try:
-            k_value = k or 5
+            k_user = k or 5
+            bm25_k = max(k_user, 10)
+            emb_k = max(k_user, 10)
+
             results = await asyncio.to_thread(
                 self.haystack_retriever.run,
                 query=query,
-                top_k_bm25=k_value,
-                top_k_embedding=k_value
+                top_k_bm25=bm25_k,
+                top_k_embedding=emb_k,
             )
-            return _convert_docs(results.get("documents", []))
+            docs = _convert_docs(results.get("documents", []))
+            return docs[:k_user]
         except Exception as e:
             logger.exception("HybridOpenSearchTool._arun failed: %s", e)
-            return []
+            return [
+                Document(
+                    page_content="No se pudo consultar OpenSearch.",
+                    metadata={
+                        "error": str(e),
+                        "opensearch_backend": _OS_BACKEND,
+                    },
+                )
+            ]
+
 
 retrieval_tool = HybridOpenSearchTool(
     haystack_retriever=haystack_retriever_instance
