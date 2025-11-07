@@ -34,3 +34,7 @@ opensearch-py>=2.6
 
 # --- Tests ---
 pytest>=8
+
+# --- Evaluación automática (RAGAS) ---
+ragas==0.1.17
+datasets>=2.14,<2.19

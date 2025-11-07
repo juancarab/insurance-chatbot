@@ -332,7 +332,20 @@ El runner vive en `services/agent/app/langchain_runner.py` y puede invocar:
    - El archivo `data/golden_set/golden_set.json` incluye 35 escenarios distribuidos en cinco categorías: `simple`, `follow_up`, `web`, `combined`, `negative`.
    - El script crea una fila por pregunta con la respuesta del agente, tiempos y metadatos; por defecto guarda la corrida en `results/golden_<timestamp>.jsonl`.
 3. Implementa tus cambios (por ejemplo, Tarea 1 o 2) y vuelve a ejecutar el script para generar `results/golden_after.jsonl`.
-4. Compara ambos archivos (o analiza los campos `answer`, `sources`, `debug`, etc.) para cuantificar mejoras.
+4. El script también produce un archivo `*.metrics.json` con métricas RAGAS (`faithfulness` y `context_precision`). Usa `--baseline-metrics` para comparar contra una corrida anterior:
+   ```bash
+   python scripts/run_golden_set.py \
+     --base-url http://127.0.0.1:8001/chat \
+     --baseline-metrics results/golden_before.metrics.json
+   ```
+5. Por defecto el script usa `gemini-2.5-flash`. Asegúrate de exportar `GEMINI_API_KEY` (o pasa `--gemini-api-key`):
+   ```bash
+   python scripts/run_golden_set.py \
+     --base-url http://127.0.0.1:8001/chat \
+     --ragas-model gemini-2.5-flash \
+     --gemini-api-key "$GEMINI_API_KEY"
+   ```
+6. Completa el campo `reference_answer` en `data/golden_set/golden_set.json` para tener contexto adicional al revisar resultados (aunque actualmente solo se calculan `faithfulness` y `context_precision`).
 
 ---
 
