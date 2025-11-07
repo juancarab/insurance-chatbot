@@ -10,7 +10,9 @@ from pydantic import BaseModel, Field
 
 from .config import Settings, get_settings
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 class Message(BaseModel):
     """Represents a chat message."""
@@ -50,7 +52,7 @@ class Source(BaseModel):
     """A retrieved source used to craft the answer."""
     id: Optional[str] = None
     title: Optional[str] = None
-    snippet: Optional[str] = None 
+    snippet: Optional[str] = None
     url: Optional[str] = None
     file_name: Optional[str] = None
     page: Optional[int] = None
@@ -183,7 +185,7 @@ class LangChainAgentFormatter:
                 language=language,
             )
         except Exception as exc:
-            logging.error("LangChain runner failed to generate a response", exc_info=True)
+            logger.error("LangChain runner failed to generate a response", exc_info=True)
             raise RuntimeError("LangChain runner failed to generate a response.") from exc
 
         if isinstance(result, dict):
@@ -216,7 +218,7 @@ class GeminiAnswerFormatter:
     @classmethod
     def from_settings(cls, settings: Settings) -> "GeminiAnswerFormatter":
         try:
-            from google import genai  # SDK nuevo
+            from google import genai  
         except ImportError as exc:
             raise RuntimeError(
                 "Para usar el formatter Gemini instala el SDK: `pip install google-genai`."
@@ -282,6 +284,7 @@ class GeminiAnswerFormatter:
                 config=self._generation_config or None,
             )
         except Exception as exc:
+            logger.error("Gemini falló al generar la respuesta", exc_info=True)
             raise RuntimeError("Gemini falló al generar la respuesta.") from exc
 
         text = getattr(resp, "text", None)
@@ -312,6 +315,7 @@ class GeminiAnswerFormatter:
 
         return answer
 
+
 def build_formatter(settings: Settings) -> AnswerFormatterProtocol:
     """Return the formatter strategy indicated by configuration."""
     if settings.formatter == "langchain":
@@ -324,6 +328,7 @@ def build_formatter(settings: Settings) -> AnswerFormatterProtocol:
 app = FastAPI(title="Insurance Chatbot API", version="0.2.0")
 settings = get_settings()
 formatter = build_formatter(settings)
+
 
 @app.post("/chat", response_model=ChatResponse)
 def chat_endpoint(request: ChatRequest) -> ChatResponse:
@@ -338,16 +343,48 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
 
     retrieved_sources: List[Source] = []
 
-    formatted_result = formatter.format_answer(
-        request.messages,
-        retrieved_sources,
-        top_k=request.top_k,
-        enable_web_search=request.enable_web_search,
-        debug=request.debug,
-        language=request.language,
-    )
+    try:
+        formatted_result = formatter.format_answer(
+            request.messages,
+            retrieved_sources,
+            top_k=request.top_k,
+            enable_web_search=request.enable_web_search,
+            debug=request.debug,
+            language=request.language,
+        )
+    except RuntimeError as exc:
+        logger.error("Formatter failed in /chat: %s", exc, exc_info=True)
+        debug_payload = {"error": str(exc)} if request.debug else None
+        return ChatResponse(
+            answer="Error: no se pudo generar la respuesta en este momento.",
+            sources=[],
+            usage={
+                "retrieved_documents": 0,
+                "formatter": settings.formatter,
+                "web_search_enabled": request.enable_web_search,
+                "language": request.language,
+                "top_k": request.top_k,
+                "debug_enabled": request.debug,
+            },
+            debug=debug_payload,
+        )
+    except Exception as exc:
+        logger.exception("Unexpected error in /chat")
+        debug_payload = {"error": str(exc)} if request.debug else None
+        return ChatResponse(
+            answer="Error: ocurrió un problema inesperado en el servidor.",
+            sources=[],
+            usage={
+                "retrieved_documents": 0,
+                "formatter": settings.formatter,
+                "web_search_enabled": request.enable_web_search,
+                "language": request.language,
+                "top_k": request.top_k,
+                "debug_enabled": request.debug,
+            },
+            debug=debug_payload,
+        )
 
-    # Normaliza respuesta
     if isinstance(formatted_result, dict):
         answer = formatted_result.get(
             "answer", "Error: The model response did not contain 'answer'."
@@ -358,7 +395,6 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
         ]
 
         usage = formatted_result.get("usage", {}) or {}
-        # baseline si falta
         usage.setdefault("retrieved_documents", len(final_sources))
         usage.setdefault("web_search_enabled", request.enable_web_search)
         usage.setdefault("formatter", settings.formatter)
@@ -368,9 +404,7 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
 
         debug_payload: Optional[dict] = None
         if request.debug:
-            debug_payload = formatted_result.get("debug")
-            if debug_payload is None:
-                debug_payload = {}
+            debug_payload = formatted_result.get("debug") or {}
 
         return ChatResponse(
             answer=answer,
@@ -379,7 +413,6 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
             debug=debug_payload,
         )
 
-    # Respuesta plana (mock/gemini simple)
     usage = {
         "retrieved_documents": len(retrieved_sources),
         "web_search_enabled": request.enable_web_search,
