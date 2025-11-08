@@ -1,0 +1,92 @@
+[
+  {
+    "id": "S01",
+    "category": "simple",
+    "description": "Qué incluye la hospitalización",
+    "reference_answer": "La póliza cubre gastos médicos provenientes de una hospitalización, siempre que hayan sido prescritos por el médico tratante y estén vigentes en las Condiciones Particulares. Esto incluye al menos: (a) días cama de hospitalización (habitación, alimentación y enfermería), (b) servicios hospitalarios como urgencia, pabellón, UCI, exámenes y medicamentos, y (c) honorarios médicos por cirugías.\n\nPOL320190074",
+    "payload": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿Qué cosas cubre la hospitalización en mi seguro?"
+        }
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S02",
+    "category": "simple",
+    "description": "Ambulancia terrestre dentro de un radio",
+    "reference_answer": "Sí, la póliza cubre el servicio de ambulancia como traslado en ambulancia terrestre para llevar al asegurado desde y hacia un hospital, dentro de un radio máximo de 50 km, cuando esté indicado en las Condiciones Particulares.\n\nPOL320190074",
+    "payload": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿Mi seguro paga ambulancia para ir al hospital?"
+        }
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S03",
+    "category": "simple",
+    "description": "Consultas y exámenes ambulatorios",
+    "reference_answer": "La póliza puede reembolsar prestaciones realizadas sin hospitalización (beneficio ambulatorio) como consultas médicas, exámenes de laboratorio, imagenología y procedimientos diagnósticos o terapéuticos, siempre que estén contratados y según porcentajes y límites de las Condiciones Particulares.\n\nPOL320190074",
+    "payload": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿También cubre consultas y exámenes si no estoy hospitalizado?"
+        }
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S04",
+    "category": "simple",
+    "description": "Deducible aplicado al beneficio ambulatorio",
+    "reference_answer": "Si en las Condiciones Particulares se fijó un deducible para las coberturas ambulatorias, la compañía sólo reembolsará los gastos que excedan ese deducible, aplicando luego el plan de beneficios señalado en la póliza. Es decir, primero se descuenta el deducible y recién después se paga el resto permitido.\n\nPOL320190074",
+    "payload": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿Por qué me descuentan un deducible antes de reembolsar mis consultas?"
+        }
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S05",
+    "category": "simple",
+    "description": "Cobertura dentro y fuera de Chile",
+    "reference_answer": "La póliza permite reembolsar gastos médicos incurridos tanto dentro como fuera de Chile, pero siempre en los términos y condiciones que se indiquen en las Condiciones Particulares (por ejemplo, qué coberturas se activan y con qué límites).\n\nPOL320190074",
+    "payload": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Si me atiendo fuera del país, ¿igual me cubre este seguro?"
+        }
+      ],
+      "top_k": 4,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  }
+]
