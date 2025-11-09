@@ -1,16 +1,18 @@
-# services/agent/app/tools/__init__.py
-
+# services/agent/app/tools.py
 from typing import List
+
 from langchain_core.tools import BaseTool
 
-# importa tus tools reales
-from .retrieval.haystack_opensearch_tool import retrieval_tool
-from .web_search.web_search import WebSearchTool
+from .tools.web_search.web_search import WebSearchTool
+from .tools.retrieval.haystack_opensearch_tool import retrieval_tool
 
 
 def build_tools(enable_web_search: bool) -> List[BaseTool]:
-    """Return the list of tools available for the agent."""
+    # siempre cargas el retriever interno
     tools: List[BaseTool] = [retrieval_tool]
+
+    # opcionalmente agregas la búsqueda web
     if enable_web_search:
         tools.append(WebSearchTool())
+
     return tools

@@ -24,7 +24,6 @@ class GeminiRagasLLM(BaseRagasLLM):
     def __init__(self, model: str, api_key: str, debug: bool = False):
         super().__init__()
 
-        # Gemini suele ir con "models/..."
         if not model.startswith("models/"):
             model = f"models/{model}"
         self.model_name = model
@@ -34,14 +33,10 @@ class GeminiRagasLLM(BaseRagasLLM):
         self.api_key = api_key
         self.debug = debug
 
-        # Que RAGAS no paralelice mucho, porque Gemini lo estamos haciendo sync
         self.run_config.timeout = 180
         self.run_config.max_workers = 1
         self.run_config.max_retries = 1
 
-    # ------------------------------------------------------------------
-    # Normalización y robustez del JSON
-    # ------------------------------------------------------------------
     def _normalize_llm_output(self, text: str) -> str:
         """
         Deja el texto en el mejor JSON posible.
@@ -56,17 +51,14 @@ class GeminiRagasLLM(BaseRagasLLM):
         """
         text = text.strip()
 
-        # 1) quitar bloques ```...``` típicos
         if text.startswith("```"):
             parts = text.split("```")
-            # buscamos desde el final porque muchas veces el JSON está al final
             for part in reversed(parts):
                 part = part.strip()
                 if part.startswith("{") or part.startswith("["):
                     text = part
                     break
 
-        # 2) si todavía no empieza con { o [, intentamos recortar desde el primer { o [
         if not (text.startswith("{") or text.startswith("[")):
             start_obj = text.find("{")
             start_arr = text.find("[")
@@ -74,22 +66,16 @@ class GeminiRagasLLM(BaseRagasLLM):
             if starts:
                 text = text[min(starts):].strip()
 
-        # 3) ahora probamos realmente si es JSON válido
         if text:
             try:
-                # si esto no lanza, ya estamos
                 json.loads(text)
                 return text
             except Exception:
-                # seguimos al fallback
                 pass
 
-        # 4) Fallbacks super defensivos
-        # si parecía lista pero quedó cortada: devolvemos lista vacía
         if text.startswith("["):
             return "[]"
 
-        # si parecía objeto pero quedó cortado: devolvemos un objeto válido
         if text.startswith("{"):
             return json.dumps(
                 {
@@ -98,7 +84,6 @@ class GeminiRagasLLM(BaseRagasLLM):
                 }
             )
 
-        # si no parecía nada, devolvemos un objeto válido básico
         return json.dumps(
             {
                 "reason": text or "LLM devolvió salida vacía o no JSON.",
@@ -106,9 +91,6 @@ class GeminiRagasLLM(BaseRagasLLM):
             }
         )
 
-    # ------------------------------------------------------------------
-    # Llamada a Gemini
-    # ------------------------------------------------------------------
     def _call_gemini(self, prompt: str, temperature: float = 0.0) -> str:
         payload = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
@@ -153,9 +135,6 @@ class GeminiRagasLLM(BaseRagasLLM):
             print("--- END LLM RAW OUTPUT (text) ---\n")
         return text_out
 
-    # ------------------------------------------------------------------
-    # Métodos que RAGAS espera
-    # ------------------------------------------------------------------
     def generate_text(
         self,
         prompt: PromptValue,
