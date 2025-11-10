@@ -29,3 +29,6 @@ Thumbs.db
 
 # Archivos locales
 ./web_search_cli.py
+.venv311/
+
+data/*.csv
