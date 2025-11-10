@@ -5,6 +5,9 @@ from typing import List, Optional, Type
 
 from pydantic import BaseModel, Field, ConfigDict
 
+from ...config import get_settings
+from .reranker import CrossEncoderReranker
+
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
@@ -58,12 +61,16 @@ query_embedder = SentenceTransformersTextEmbedder(
     normalize_embeddings=True,
 )
 
+# Get settings for retrieval parameters
+settings = get_settings()
+retrieval_k = settings.retrieval_top_k
+
 # Hybrid retriever: BM25 + embeddings + RRF
 haystack_retriever_instance = OpenSearchHybridRetriever(
     document_store=doc_store,
     embedder=query_embedder,
-    top_k_bm25=5,
-    top_k_embedding=5,
+    top_k_bm25=retrieval_k,
+    top_k_embedding=retrieval_k,
     join_mode="reciprocal_rank_fusion",
 )
 
@@ -135,13 +142,25 @@ class HybridOpenSearchTool(BaseTool):
 
     retriever: BaseRetriever
 
+    def __init__(self, retriever: BaseRetriever):
+        super().__init__()
+        self.retriever = retriever
+        self.reranker = CrossEncoderReranker()
+
     def _run(
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> List[Document]:
         try:
-            return self.retriever.invoke(query)
+            # Recuperar documentos usando el retriever
+            docs = self.retriever.invoke(query)
+            
+            # Aplicar reranking si hay documentos
+            if docs:
+                docs = self.reranker.rerank(query, docs)
+            
+            return docs
         except Exception as e:
             logger.exception("HybridOpenSearchTool._run failed: %s", e)
             return []
@@ -152,7 +171,15 @@ class HybridOpenSearchTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> List[Document]:
         try:
-            return await self.retriever.ainvoke(query)
+            # Recuperar documentos usando el retriever
+            docs = await self.retriever.ainvoke(query)
+            
+            # Aplicar reranking si hay documentos
+            if docs:
+                # El reranking se ejecuta en un thread separado para no bloquear
+                docs = await asyncio.to_thread(self.reranker.rerank, query, docs)
+            
+            return docs
         except Exception as e:
             logger.exception("HybridOpenSearchTool._arun failed: %s", e)
             return []
