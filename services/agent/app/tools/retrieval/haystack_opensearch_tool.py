@@ -128,6 +128,8 @@ class HybridOpenSearchTool(BaseTool):
             # Aplicar reranking si hay documentos
             if docs:
                 docs = self.reranker.rerank(query, docs)
+            
+            return docs
         except Exception as e:
             logger.exception("HybridOpenSearchTool._run failed: %s", e)
             return []
