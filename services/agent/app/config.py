@@ -7,8 +7,8 @@ from pydantic_settings import BaseSettings
 
 class AgentSettings(BaseSettings):
     """
-    Config del AGENTE (independiente del backend).
-    Lee variables desde entorno (.env via docker-compose).
+    Configuración del agente (independiente del backend).
+    Lee variables de entorno (.env o docker-compose).
     """
 
     # --- Gemini (LangChain wrapper ChatGoogleGenerativeAI) ---
@@ -26,10 +26,18 @@ class AgentSettings(BaseSettings):
     opensearch_port: int = Field(default=9200, validation_alias="OPENSEARCH_PORT")
     opensearch_index: str = Field(default="policies", validation_alias="OPENSEARCH_INDEX")
     opensearch_embed_dim: int = Field(default=384, validation_alias="OPENSEARCH_EMBED_DIM")
+
+    # --- Modelo de embeddings ---
     embedding_model: str = Field(
         default="sentence-transformers/all-MiniLM-L6-v2",
         validation_alias="EMBEDDING_MODEL",
     )
+
+    # --- Retrieval + Reranking ---
+    retrieval_top_k: int = Field(default=20, validation_alias="RETRIEVAL_TOP_K")
+    rerank_model: str = Field(default="cross-encoder/ms-marco-MiniLM-L-6-v2", validation_alias="RERANK_MODEL")
+    rerank_batch_size: int = Field(default=32, validation_alias="RERANK_BATCH_SIZE")
+    rerank_top_k: int = Field(default=4, validation_alias="RERANK_TOP_K")
 
     # --- OpenSearch (índice de resúmenes para el router semántico) ---
     policy_summaries_index: str = Field(
@@ -50,4 +58,5 @@ class AgentSettings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> AgentSettings:
+    """Carga la configuración desde .env (cacheada)."""
     return AgentSettings()
