@@ -48,5 +48,19 @@ services:
     volumes:
       - os-data:/usr/share/opensearch/data
 
+  tasks:
+    build:
+      context: ./data
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - opensearch
+      - backend
+    volumes:
+      - ./data/raw_policies:/app/data/raw_policies
+      - ./eda_out:/app/eda_out
+      - ./data/test/ragas_eval/results:/app/results
+
 volumes:
   os-data:

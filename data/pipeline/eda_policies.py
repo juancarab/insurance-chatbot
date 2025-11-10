@@ -1,33 +1,27 @@
-# source/eda_policies.py
-#!/usr/bin/env python3
 """
-EDA mínimo para PDFs de pólizas.
+PDF Exploratory Data Analysis (EDA) Module.
 
-Genera:
-- eda_out/eda_summary_by_file.csv      (resumen por archivo)
-- eda_out/eda_recommendations.json     (chunk_size y chunk_overlap sugeridos)
+Analyzes PDF files to suggest optimal chunking strategies.
+Generates:
+- eda_out/eda_summary_by_file.csv
+- eda_out/eda_recommendations.json
 """
-import os, re, json, argparse
+import os
+import re
+import json
+import argparse
 from pathlib import Path
 from statistics import mean
 from dataclasses import dataclass, asdict
 from typing import List
 import pandas as pd
 from pypdf import PdfReader
+import config
 
-# --------- Config vía entorno (.env si está disponible) ---------
-try:
-    from dotenv import load_dotenv  # opcional
-    load_dotenv()
-except Exception:
-    pass
-
-PDF_DIR_ENV = os.getenv("PDF_DIR", "./data/raw_policies")
-CHUNK_SIZE_ENV = int(os.getenv("CHUNK_SIZE", "600"))
-CHUNK_OVERLAP_ENV = int(os.getenv("CHUNK_OVERLAP", "120"))
-
-# ---------- utilidades ----------
 def percentile(values: List[int], q: float) -> float:
+    """
+    Calculates the q-th percentile of a list of values.
+    """
     if not values:
         return 0.0
     xs = sorted(values)
@@ -36,20 +30,24 @@ def percentile(values: List[int], q: float) -> float:
     c = min(f + 1, len(xs) - 1)
     if f == c:
         return float(xs[f])
-    # interpolación lineal
     return float(xs[f] * (c - k) + xs[c] * (k - f))
 
 def split_paragraphs(text: str) -> List[str]:
+    """
+    Splits text into paragraphs or sentences.
+    """
     text = text.replace("\r", "\n")
     if "\n\n" in text:
         parts = [p.strip() for p in re.split(r"\n{2,}", text) if p.strip()]
     else:
-        # fallback por oraciones
         parts = [p.strip() for p in re.split(r"(?<=[\.\!\?])\s+(?=[A-ZÁÉÍÓÚÑ0-9])", text) if p.strip()]
     return parts
 
 @dataclass
 class FileStats:
+    """
+    Dataclass to hold statistics for a single PDF file.
+    """
     file: str
     pages: int
     total_chars: int
@@ -59,10 +57,12 @@ class FileStats:
     p90_paragraph_chars: float
 
 def analyze_pdf(path: Path) -> FileStats:
+    """
+    Extracts text and computes statistics for a single PDF file.
+    """
     try:
         reader = PdfReader(str(path))
     except Exception:
-        # si no se puede abrir, devolvemos ceros
         return FileStats(path.name, 0, 0, 0.0, 0, 0.0, 0.0)
 
     para_lengths: List[int] = []
@@ -94,18 +94,19 @@ def analyze_pdf(path: Path) -> FileStats:
 
 def propose_chunking(stats: List[FileStats]) -> dict:
     """
-    Sugerencia basada en el p90 promedio del tamaño de párrafo.
-    Permite sobreescribir con CHUNK_SIZE/CHUNK_OVERLAP del entorno.
+    Suggests chunk_size and chunk_overlap based on p90 paragraph length.
+    Allows override from environment variables.
     """
     p90s = [s.p90_paragraph_chars for s in stats if s.p90_paragraph_chars > 0]
-    # base sugerida por EDA
     base = int(mean(p90s) * 1.25) if p90s else 1200
     chunk_size_auto = max(400, min(1600, base))
     chunk_overlap_auto = min(250, max(120, int(chunk_size_auto * 0.18)))
 
-    # si el entorno define valores, prevalecen
-    chunk_size = CHUNK_SIZE_ENV if CHUNK_SIZE_ENV else chunk_size_auto
-    chunk_overlap = CHUNK_OVERLAP_ENV if CHUNK_OVERLAP_ENV else chunk_overlap_auto
+    chunk_size_env = config.CHUNK_SIZE_ENV
+    chunk_overlap_env = config.CHUNK_OVERLAP_ENV
+
+    chunk_size = int(chunk_size_env) if chunk_size_env else chunk_size_auto
+    chunk_overlap = int(chunk_overlap_env) if chunk_overlap_env else chunk_overlap_auto
 
     return {
         "files_analyzed": len(stats),
@@ -113,15 +114,18 @@ def propose_chunking(stats: List[FileStats]) -> dict:
         "chunk_size": int(chunk_size),
         "chunk_overlap": int(chunk_overlap),
         "source": {
-            "chunk_size": "env" if CHUNK_SIZE_ENV else "eda",
-            "chunk_overlap": "env" if CHUNK_OVERLAP_ENV else "eda",
+            "chunk_size": "env" if chunk_size_env else "eda",
+            "chunk_overlap": "env" if chunk_overlap_env else "eda",
         },
     }
 
 def main():
+    """
+    Main function for standalone script execution.
+    """
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data_dir", default=PDF_DIR_ENV, help="Carpeta con PDFs (defecto: PDF_DIR del entorno)")
-    ap.add_argument("--out_dir", default="./eda_out", help="Carpeta de salida (defecto: ./eda_out)")
+    ap.add_argument("--data_dir", default=config.PDF_DIR, help="Folder with PDFs")
+    ap.add_argument("--out_dir", default=config.EDA_OUT_DIR, help="Output folder")
     args = ap.parse_args()
 
     data_dir, out_dir = Path(args.data_dir), Path(args.out_dir)
@@ -129,24 +133,21 @@ def main():
 
     pdfs = list(data_dir.glob("**/*.pdf"))
     if not pdfs:
-        raise SystemExit(f"No se encontraron PDFs en {data_dir}")
+        raise SystemExit(f"No PDFs found in {data_dir}")
 
     stats: List[FileStats] = [analyze_pdf(p) for p in pdfs]
 
-    # CSV: resumen por archivo
     df = pd.DataFrame([asdict(s) for s in stats]).sort_values("file")
     df.to_csv(out_dir / "eda_summary_by_file.csv", index=False)
 
-    # JSON: recomendación de chunking
     recs = propose_chunking(stats)
-    (out_dir / "eda_recommendations.json").write_text(
+    (out_dir / config.EDA_RECS_FILE).write_text(
         json.dumps(recs, indent=2, ensure_ascii=False), encoding="utf-8"
     )
 
-    # Mini resumen por consola
     print(f"PDFs: {len(stats)} | p90_paragraph_mean: {recs['p90_paragraph_mean']}")
-    print(f"chunk_size: {recs['chunk_size']} | chunk_overlap: {recs['chunk_overlap']} (fuente: {recs['source']})")
-    print(f"Archivos: {out_dir/'eda_summary_by_file.csv'} ; {out_dir/'eda_recommendations.json'}")
+    print(f"chunk_size: {recs['chunk_size']} | chunk_overlap: {recs['chunk_overlap']} (source: {recs['source']})")
+    print(f"Files: {out_dir/'eda_summary_by_file.csv'} ; {out_dir/config.EDA_RECS_FILE}")
 
 if __name__ == "__main__":
     main()

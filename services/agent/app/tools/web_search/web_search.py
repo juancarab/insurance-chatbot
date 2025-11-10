@@ -1,13 +1,14 @@
 """
-WebSearchTool - Tavily web search tool for LangChain agents.  
-Used when the local knowledge base (OpenSearch) does not provide enough context.  
-Returns a list of dicts with {title, url, snippet, source='tavily'}  
+WebSearchTool - Tavily web search tool for LangChain agents.
+Used when the local knowledge base (OpenSearch) does not provide enough context.
+Returns a list of dicts with {title, url, snippet, source='tavily'}
 or a single-item list containing an error dict.
 """
 
 from __future__ import annotations
 import os
 import logging
+import asyncio  # <--- AÑADIDO
 from typing import List, Dict, Optional, Type
 
 from dotenv import load_dotenv
@@ -120,5 +121,18 @@ class WebSearchTool(BaseTool):
                 "unexpected_error"
             )
 
-    async def _arun(self, *args, **kwargs):
-        raise NotImplementedError("Asynchronous mode not implemented for WebSearchTool.")
+    async def _arun(
+        self,
+        query: str,
+        max_results: int = 5,
+        freshness_days: int = 30,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> List[Dict]:
+        """Ejecuta el _run síncrono en un hilo separado."""
+        return await asyncio.to_thread(
+            self._run,
+            query=query,
+            max_results=max_results,
+            freshness_days=freshness_days,
+            run_manager=run_manager
+        )

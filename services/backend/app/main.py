@@ -161,7 +161,7 @@ class LangChainAgentFormatter:
             )
         return cls(runner)
 
-    def format_answer(
+    async def format_answer(
         self,
         messages: List[Message],
         contexts: List[Source],
@@ -176,7 +176,7 @@ class LangChainAgentFormatter:
         The runner can also override 'sources' and include 'usage'/'debug'.
         """
         try:
-            result = self._runner(
+            result = await self._runner(
                 messages=[m.dict() for m in messages],
                 contexts=[s.dict() for s in contexts],
                 top_k=top_k,
@@ -256,25 +256,42 @@ class GeminiAnswerFormatter:
     ) -> str:
         conversation = "\n".join(f"{m.role.upper()}: {m.content}" for m in messages)
 
-        if contexts:
-            ctx = "\n".join(
-                f"{(s.title or s.file_name or 'Fuente')}: {(s.snippet or '').strip()}"
-                for s in contexts
+        if not contexts:
+            no_ctx_answer = (
+                "I couldn’t retrieve any policy fragments for this query. "
+                "Please provide the exact plan name or the policy’s particular conditions so I can answer precisely."
             )
-            context_prompt = f"Fragmentos relevantes:\n{ctx}\n\n"
-        else:
-            context_prompt = "No se recuperaron fragmentos de pólizas para este turno.\n\n"
+
+            if debug:
+                return {
+                    "answer": no_ctx_answer,
+                    "sources": [],
+                    "debug": {
+                        "formatter": "gemini",
+                        "reason": "no_contexts",
+                    },
+                }
+
+            return no_ctx_answer
+
+        ctx = "\n".join(
+            f"{(s.title or s.file_name or 'Source')}: {(s.snippet or '').strip()}"
+            for s in contexts
+        )
+        context_prompt = f"Relevant fragments from internal documents:\n{ctx}\n\n"
 
         system_prompt = (
-            "Eres un asistente de seguros. Proporciona respuestas concisas y exactas usando los fragmentos "
-            "proporcionados. Si el contexto no contiene la respuesta, di que no lo sabes. "
-            f"Responde SIEMPRE en {language}."
+            "You are an insurance assistant. You must answer ONLY using the information found in the fragments below. "
+            "If the fragments do not explicitly contain the answer, say you don't know and ask the user for the exact plan "
+            "or for the policy's particular conditions. "
+            f"ALWAYS answer in {language}."
         )
 
         composed_prompt = (
             f"{system_prompt}\n\n"
-            f"{context_prompt}Historial de conversación:\n{conversation}\n\n"
-            "Respuesta del asistente:"
+            f"{context_prompt}"
+            f"Conversation history:\n{conversation}\n\n"
+            "Assistant answer:"
         )
 
         try:
@@ -284,8 +301,8 @@ class GeminiAnswerFormatter:
                 config=self._generation_config or None,
             )
         except Exception as exc:
-            logger.error("Gemini falló al generar la respuesta", exc_info=True)
-            raise RuntimeError("Gemini falló al generar la respuesta.") from exc
+            logger.error("Gemini failed to generate the answer", exc_info=True)
+            raise RuntimeError("Gemini failed to generate the answer.") from exc
 
         text = getattr(resp, "text", None)
         if not text and getattr(resp, "candidates", None):
@@ -298,9 +315,10 @@ class GeminiAnswerFormatter:
             text = "\n".join(parts)
 
         if not text:
-            raise RuntimeError("Gemini retornó una respuesta vacía.")
+            raise RuntimeError("Gemini returned an empty answer.")
 
         answer = text.strip()
+
         if debug:
             return {
                 "answer": answer,
@@ -314,7 +332,6 @@ class GeminiAnswerFormatter:
             }
 
         return answer
-
 
 def build_formatter(settings: Settings) -> AnswerFormatterProtocol:
     """Return the formatter strategy indicated by configuration."""
@@ -331,7 +348,7 @@ formatter = build_formatter(settings)
 
 
 @app.post("/chat", response_model=ChatResponse)
-def chat_endpoint(request: ChatRequest) -> ChatResponse:
+async def chat_endpoint(request: ChatRequest) -> ChatResponse:
     if not request.messages:
         raise HTTPException(status_code=400, detail="At least one message is required.")
     latest_message = request.messages[-1]
@@ -344,7 +361,7 @@ def chat_endpoint(request: ChatRequest) -> ChatResponse:
     retrieved_sources: List[Source] = []
 
     try:
-        formatted_result = formatter.format_answer(
+        formatted_result = await formatter.format_answer(
             request.messages,
             retrieved_sources,
             top_k=request.top_k,

@@ -1,4 +1,4 @@
-# services/agent/app/langchain_runner.py
+import time
 from typing import Any, Dict, List, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage
@@ -23,7 +23,7 @@ class AgentRunner:
         self.nodes = AgentNodes(self.llm)
         self.graph = build_graph(self.nodes)
 
-    def run(
+    async def run(
         self,
         *,
         messages: List[Dict[str, Any]],
@@ -33,6 +33,9 @@ class AgentRunner:
         debug: bool = False,
         language: str = "es",
     ) -> Dict[str, Any]:
+        
+        start_total_time = time.perf_counter()
+
         langchain_messages = []
         for msg in messages:
             role = msg.get("role")
@@ -56,7 +59,9 @@ class AgentRunner:
         if debug:
             initial_state["debug_steps"] = []
 
-        final_state = self.graph.invoke(initial_state, config={"recursion_limit": 10})
+        final_state = await self.graph.ainvoke(initial_state, config={"recursion_limit": 10})
+        
+        total_duration_ms = (time.perf_counter() - start_total_time) * 1000
 
         last_ai = next(
             (m for m in reversed(final_state.get("messages", [])) if isinstance(m, AIMessage)),
@@ -82,6 +87,7 @@ class AgentRunner:
         }
         if debug:
             resp["debug"] = {
+                "total_duration_ms": round(total_duration_ms, 2),
                 "steps": final_state.get("debug_steps", []),
                 "chunks": final_sources,
                 "tool_iterations": final_state.get("tool_iterations", 0),

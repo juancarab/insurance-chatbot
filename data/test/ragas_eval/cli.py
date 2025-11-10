@@ -12,7 +12,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--golden-set",
-        default="data/test/ragas_eval/golden_set/golden_set.json",
+        default="test/ragas_eval/golden_set/golden_set.json",
         help="Ruta al archivo JSON con el golden set",
     )
     parser.add_argument(

@@ -1,28 +1,20 @@
-# source/setup_opensearch.py — crea/recrea índice "policies"
-import os, argparse
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except Exception:
-    pass
+"""
+OpenSearch Index Setup Module.
 
+Provides functions to connect to OpenSearch and create/recreate
+the 'policies' index with the correct vector mapping.
+"""
+import os
+import argparse
 from opensearchpy import OpenSearch
-
-HOST       = os.getenv("OPENSEARCH_HOST", "opensearch")  # en host usa localhost (ver comando abajo)
-PORT       = int(os.getenv("OPENSEARCH_PORT", "9200"))
-USER       = os.getenv("OPENSEARCH_USER", "admin")
-PASSWORD   = os.getenv("OPENSEARCH_PASSWORD", "admin")
-INDEX      = os.getenv("OPENSEARCH_INDEX", "policies")
-EMBED_DIM  = int(os.getenv("OPENSEARCH_EMBED_DIM", "384"))
-SHARDS     = int(os.getenv("OPENSEARCH_SHARDS", "1"))
-REPLICAS   = int(os.getenv("OPENSEARCH_REPLICAS", "0"))
+import config
 
 MAPPING = {
     "settings": {
         "index": {
             "knn": True,
-            "number_of_shards": SHARDS,
-            "number_of_replicas": REPLICAS,
+            "number_of_shards": config.OPENSEARCH_SHARDS,
+            "number_of_replicas": config.OPENSEARCH_REPLICAS,
         }
     },
     "mappings": {
@@ -38,7 +30,7 @@ MAPPING = {
             },
             "embedding": {
                 "type": "knn_vector",
-                "dimension": EMBED_DIM,
+                "dimension": config.OPENSEARCH_EMBED_DIM,
                 "method": {
                     "name": "hnsw",
                     "engine": "nmslib",
@@ -51,33 +43,44 @@ MAPPING = {
 }
 
 def get_client() -> OpenSearch:
+    """
+    Initializes and returns an OpenSearch client.
+    """
     return OpenSearch(
-        hosts=[{"host": HOST, "port": PORT}],
-        http_auth=(USER, PASSWORD),
+        hosts=[{"host": config.OPENSEARCH_HOST, "port": config.OPENSEARCH_PORT}],
+        http_auth=(config.OPENSEARCH_USER, config.OPENSEARCH_PASSWORD),
         use_ssl=False, verify_certs=False, ssl_show_warn=False, ssl_assert_hostname=False,
     )
 
-def recreate_index(client: OpenSearch, index: str = INDEX, body: dict = MAPPING) -> None:
+def recreate_index(client: OpenSearch, index: str = config.OPENSEARCH_INDEX, body: dict = MAPPING) -> None:
+    """
+    Deletes an index if it exists and creates it fresh.
+    """
     if client.indices.exists(index=index):
+        print(f"Deleting existing index: {index}")
         client.indices.delete(index=index, ignore=[404])
+    print(f"Creating new index: {index}")
     client.indices.create(index=index, body=body)
 
 def main():
+    """
+    Main function for standalone script execution.
+    """
     ap = argparse.ArgumentParser()
-    ap.add_argument("--recreate", action="store_true", help="Eliminar y crear el índice")
-    ap.add_argument("--index", default=INDEX, help="Nombre del índice")
+    ap.add_argument("--recreate", action="store_true", help="Delete and create the index")
+    ap.add_argument("--index", default=config.OPENSEARCH_INDEX, help="Name of the index")
     args = ap.parse_args()
 
     client = get_client()
     if args.recreate:
         recreate_index(client, args.index, MAPPING)
-        print(f"Índice recreado: {args.index}")
+        print(f"Index recreated: {args.index}")
     else:
         if client.indices.exists(index=args.index):
-            print(f"Índice ya existe: {args.index}")
+            print(f"Index already exists: {args.index}")
         else:
             client.indices.create(index=args.index, body=MAPPING)
-            print(f"Índice creado: {args.index}")
+            print(f"Index created: {args.index}")
 
 if __name__ == "__main__":
     main()

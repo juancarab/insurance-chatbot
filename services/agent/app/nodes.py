@@ -1,5 +1,6 @@
-# services/agent/app/nodes.py
 import json
+import asyncio
+import time
 from typing import Any, Dict, List
 from .prompts import AGENT_SYSTEM_PROMPT, REFORMULATION_PROMPT
 
@@ -52,8 +53,21 @@ class AgentNodes:
             content = (msg.content or "")[:500]
             formatted.append(f"{role}: {content}")
         return "\n".join(formatted[-10:])
+    
+    async def _time_tool_call(self, tool, tool_args):
+        start_time = time.perf_counter()
+        try:
+            output = await tool.ainvoke(tool_args)
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            return {"output": output, "duration_ms": duration_ms, "error": None}
+        except Exception as e:
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            return {"output": e, "duration_ms": duration_ms, "error": e}
 
-    def call_model_node(self, state: AgentState) -> Dict[str, Any]:
+    async def call_model_node(self, state: AgentState) -> Dict[str, Any]:
+        debug_steps = state.get("debug_steps", []) if state.get("debug") else []
+        start_time = time.perf_counter()
+
         system_prompt = AGENT_SYSTEM_PROMPT.format(language=state.get("language", "es"))
         context_block = self._build_context_block(state.get("contexts", []))
         sys_msg = SystemMessage(content=system_prompt + context_block)
@@ -62,23 +76,35 @@ class AgentNodes:
         msgs: List[BaseMessage] = [sys_msg]
         msgs.extend(state["messages"])
 
-        response = llm_with_tools.invoke(msgs)
-        return {"messages": [response]}
+        response = await llm_with_tools.ainvoke(msgs)
+        
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        output = {"messages": [response]}
 
-    def reformulate_for_tools_node(self, state: AgentState) -> Dict[str, Any]:
+        if state.get("debug"):
+            debug_steps.append({
+                "step": "call_model_node",
+                "duration_ms": round(duration_ms, 2)
+            })
+            output["debug_steps"] = debug_steps
+        
+        return output
+
+    async def reformulate_for_tools_node(self, state: AgentState) -> Dict[str, Any]:
         last_message = state["messages"][-1]
         if not isinstance(last_message, AIMessage) or not last_message.tool_calls:
             return {}
 
         if state.get("tool_iterations", 0) >= self.TOOL_LOOP_LIMIT:
             return {}
+        
+        debug_steps = state.get("debug_steps", []) if state.get("debug") else []
+        start_time = time.perf_counter()
 
         reformulation_targets = {"hybrid_opensearch_search", "web_search"}
         history = state["messages"][:-1]
-
         queries_to_fix = {}
         original_tool_calls = {}
-
         for tool_call in last_message.tool_calls:
             tool_id = tool_call.get("id")
             original_tool_calls[tool_id] = tool_call
@@ -86,10 +112,8 @@ class AgentNodes:
             tool_args = tool_call.get("args", {}) or {}
             if tool_name in reformulation_targets and "query" in tool_args:
                 queries_to_fix[tool_id] = (tool_args["query"] or "")
-
         if not queries_to_fix or not history:
             return {}
-
         queries_str = "\n".join(
             f'- ID_LLAMADA: "{tool_id}", CONSULTA_ORIGINAL: "{query}"'
             for tool_id, query in queries_to_fix.items()
@@ -100,8 +124,9 @@ class AgentNodes:
             queries=queries_str,
         )
 
+        error_str = None
         try:
-            response = self.llm.invoke([HumanMessage(content=reformulation_prompt)])
+            response = await self.llm.ainvoke([HumanMessage(content=reformulation_prompt)])
             content = response.content.strip()
 
             reformulated_queries = {}
@@ -138,24 +163,39 @@ class AgentNodes:
                 new_tool_calls.append(new_call_dict)
 
         except Exception as e:
+            error_str = str(e)
             new_tool_calls = last_message.tool_calls
             if state.get("debug"):
-                state.get("debug_steps", []).append(
-                    {"step": "reformulate_batch_failed", "error": str(e)}
+                debug_steps.append(
+                    {"step": "reformulate_batch_failed", "error": error_str}
                 )
 
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        
         new_ai_msg = AIMessage(
             content=last_message.content,
             tool_calls=new_tool_calls,
         )
-        return {"messages": state["messages"][:-1] + [new_ai_msg]}
+        
+        output = {"messages": state["messages"][:-1] + [new_ai_msg]}
+
+        if state.get("debug"):
+            debug_entry = {
+                "step": "reformulate_for_tools_node",
+                "duration_ms": round(duration_ms, 2)
+            }
+            if error_str:
+                debug_entry["error"] = error_str
+            debug_steps.append(debug_entry)
+            output["debug_steps"] = debug_steps
+
+        return output
 
     def _serialize_tool_output_for_llm(self, output: Any) -> str:
         if isinstance(output, list):
             items = output
         else:
             items = [output]
-
         simplified = []
         for item in items:
             if hasattr(item, "page_content"):
@@ -169,15 +209,17 @@ class AgentNodes:
                 simplified.append(item)
             else:
                 simplified.append({"value": str(item)})
-
         s = json.dumps(simplified, ensure_ascii=False)
         return s[:4000]
 
-    def call_tool_node(self, state: AgentState) -> Dict[str, Any]:
+    async def call_tool_node(self, state: AgentState) -> Dict[str, Any]:
         tool_calls = state["messages"][-1].tool_calls
         tool_outputs: List[ToolMessage] = []
         new_structured_sources: List[Dict[str, Any]] = []
         debug_steps: List[Dict[str, Any]] = state.get("debug_steps", [])
+
+        tasks = []
+        tool_call_details = [] 
 
         for tool_call in tool_calls:
             tool_name = tool_call.get("name")
@@ -193,6 +235,7 @@ class AgentNodes:
                 (t for t in state.get("__tools__", []) if t.name.lower() == requested),
                 None,
             )
+            
             if not tool:
                 tool_outputs.append(
                     ToolMessage(
@@ -207,11 +250,36 @@ class AgentNodes:
                             "tool": tool_name,
                             "input": tool_args,
                             "error": "tool_not_available",
+                            "duration_ms": 0.0
                         }
                     )
                 continue
+            
+            tasks.append(self._time_tool_call(tool, tool_args))
+            tool_call_details.append((tool, tool_call))
 
-            output = tool.invoke(tool_args)
+        timed_outputs = await asyncio.gather(*tasks, return_exceptions=False)
+
+        for (tool, tool_call), timed_result in zip(tool_call_details, timed_outputs):
+            tool_id = tool_call.get("id")
+            output = timed_result["output"]
+            duration_ms = timed_result["duration_ms"]
+            error = timed_result["error"]
+            
+            if error:
+                error_content = f"[ERROR] La herramienta '{tool.name}' falló con el error: {error}"
+                if state.get("debug"):
+                    debug_steps.append(
+                        {
+                            "step": "call_tool",
+                            "tool": tool.name,
+                            "input": tool_call.get("args", {}),
+                            "error": str(error),
+                            "duration_ms": round(duration_ms, 2)
+                        }
+                    )
+                tool_outputs.append(ToolMessage(content=error_content, tool_call_id=tool_id))
+                continue
 
             if state.get("debug"):
                 preview = str(output)
@@ -221,8 +289,9 @@ class AgentNodes:
                     {
                         "step": "call_tool",
                         "tool": tool.name,
-                        "input": tool_args,
+                        "input": tool_call.get("args", {}),
                         "output_preview": preview,
+                        "duration_ms": round(duration_ms, 2)
                     }
                 )
 
@@ -232,35 +301,26 @@ class AgentNodes:
                     if hasattr(item, "page_content"):
                         meta = getattr(item, "metadata", {}) or {}
                         src = {
-                            "title": meta.get("title")
-                            or meta.get("file_name")
-                            or meta.get("source")
-                            or "Source",
-                            "snippet": getattr(item, "page_content", "")
-                            or meta.get("snippet"),
+                            "title": meta.get("title") or meta.get("file_name") or meta.get("source") or "Source",
+                            "snippet": getattr(item, "page_content", "") or meta.get("snippet"),
                             "url": meta.get("url"),
                             "file_name": meta.get("file_name"),
                             "page": meta.get("page"),
                             "chunk_id": meta.get("chunk_id"),
-                            "score": float(meta.get("score", 0.0))
-                            if meta.get("score") is not None
-                            else None,
+                            "score": float(meta.get("score", 0.0)) if meta.get("score") is not None else None,
                         }
                         new_structured_sources.append(src)
                     elif isinstance(item, dict):
+                        if "error" in item:
+                            continue
                         src = {
-                            "title": item.get("title")
-                            or item.get("file_name")
-                            or item.get("source")
-                            or "Source",
+                            "title": item.get("title") or item.get("file_name") or item.get("source") or "Source",
                             "snippet": item.get("snippet"),
                             "url": item.get("url"),
                             "file_name": item.get("file_name"),
                             "page": item.get("page"),
                             "chunk_id": item.get("chunk_id"),
-                            "score": float(item.get("score", 0.0))
-                            if item.get("score") is not None
-                            else None,
+                            "score": float(item.get("score", 0.0)) if item.get("score") is not None else None,
                         }
                         new_structured_sources.append(src)
 
@@ -291,13 +351,9 @@ class AgentNodes:
     def router(self, state: AgentState) -> str:
         if not state.get("messages"):
             return "end"
-
         last = state["messages"][-1]
-
         if state.get("tool_iterations", 0) >= self.TOOL_LOOP_LIMIT:
             return "end"
-
         if isinstance(last, AIMessage) and last.tool_calls:
             return "call_tool"
-
         return "end"
