@@ -25,6 +25,12 @@ class AgentSettings(BaseSettings):
     opensearch_index: str = Field(default="policies", validation_alias="OPENSEARCH_INDEX")
     opensearch_embed_dim: int = Field(default=384, validation_alias="OPENSEARCH_EMBED_DIM")
     embedding_model: str = Field(default="sentence-transformers/all-MiniLM-L6-v2", validation_alias="EMBEDDING_MODEL")
+    
+    # Retrieval + Reranking
+    retrieval_top_k: int = Field(default=20, validation_alias="RETRIEVAL_TOP_K")
+    rerank_model: str = Field(default="cross-encoder/ms-marco-MiniLM-L-6-v2", validation_alias="RERANK_MODEL")
+    rerank_batch_size: int = Field(default=32, validation_alias="RERANK_BATCH_SIZE")
+    rerank_top_k: int = Field(default=4, validation_alias="RERANK_TOP_K")
 
     # Si activas seguridad en OpenSearch (opcionales)
     opensearch_user: Optional[str] = Field(default=None, validation_alias="OPENSEARCH_USER")
