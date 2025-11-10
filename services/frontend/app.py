@@ -19,10 +19,10 @@ def init_session() -> None:
                     "👋 Hola, soy el asistente de seguros. Pregúntame sobre coberturas, "
                     "exclusiones o límites de tus pólizas."
                 ),
+                "sources": [], 
+                "debug": None
             }
         ]
-    if "last_response" not in st.session_state:
-        st.session_state.last_response = None
 
 def render_sidebar() -> Dict[str, Any]:
     st.sidebar.header("Configuración")
@@ -35,7 +35,6 @@ def render_sidebar() -> Dict[str, Any]:
     st.sidebar.markdown("---")
     if st.sidebar.button("🧹 Limpiar chat"):
         st.session_state.messages = st.session_state.messages[:1]
-        st.session_state.last_response = None
         st.sidebar.success("Chat limpiado.")
 
     return {
@@ -46,13 +45,54 @@ def render_sidebar() -> Dict[str, Any]:
         "language": language,
     }
 
-def render_chat(messages: List[Dict[str, str]]) -> None:
+def render_chat(messages: List[Dict[str, Any]], debug_mode: bool) -> None:
     for message in messages:
         role = message.get("role", "assistant")
         content = message.get("content", "")
+        
         with st.chat_message("assistant" if role == "system" else role):
             st.markdown(content)
 
+            if role == "assistant":
+                sources = message.get("sources", []) or []
+                if sources:
+                    with st.expander("📚 Fuentes utilizadas"):
+                        for idx, source in enumerate(sources, start=1):
+                            title = source.get("title") or source.get("file_name") or "Sin título"
+                            page = source.get("page")
+                            score = source.get("score")
+                            snippet = (source.get("snippet") or "").strip()
+                            url = source.get("url")
+
+                            header_parts = [f"**{idx}. {title}**"]
+                            meta_bits: List[str] = []
+                            if page is not None:
+                                meta_bits.append(f"p. **{page}**")
+                            chunk_id = source.get("chunk_id")
+                            if chunk_id:
+                                meta_bits.append(f"chunk **{chunk_id}**")
+                            if score is not None:
+                                try:
+                                    meta_bits.append(f"score **{float(score):.3f}**")
+                                except Exception:
+                                    meta_bits.append(f"score {score}")
+
+                            if meta_bits:
+                                header_parts.append(" — " + ", ".join(meta_bits))
+
+                            st.markdown("".join(header_parts))
+
+                            if snippet:
+                                st.markdown(f"> {snippet}")
+                            if url:
+                                st.markdown(f"[Enlace]({url})")
+                            st.markdown("")
+
+                debug_info = message.get("debug")
+                if debug_mode and debug_info:
+                    with st.expander("🛠️ Detalles Técnicos (Debug)"):
+                        steps = debug_info.get("steps")
+                        st.json(steps if steps is not None else debug_info)
 
 def call_backend(api_url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     response = requests.post(api_url, json=payload, timeout=45)
@@ -66,6 +106,8 @@ def main() -> None:
 
     init_session()
     config = render_sidebar()
+
+    render_chat(st.session_state.messages, config["debug"])
 
     prompt = st.chat_input("Escribe tu consulta sobre pólizas de seguro")
 
@@ -82,65 +124,33 @@ def main() -> None:
 
         try:
             response = call_backend(config["api_url"], payload)
-            st.session_state.last_response = response
             answer = response.get("answer", "No se recibió respuesta del backend.")
-            st.session_state.messages.append({"role": "assistant", "content": answer})
+            sources = response.get("sources", [])
+            debug_info = response.get("debug")
+
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": answer,
+                "sources": sources,
+                "debug": debug_info
+            })
+
         except requests.RequestException as exc:
             error_message = (
-                "No se pudo contactar al backend. Verifica que el servicio esté "
-                f"corriendo en {config['api_url']}.\n\nDetalles: {exc}"
+                "No se pudo contactar al backend. "
+                f"Verifica que el servicio esté corriendo en {config['api_url']}.\n\nDetalles: {exc}"
             )
-            st.session_state.last_response = {"error": str(exc)}
-            st.session_state.messages.append({"role": "assistant", "content": error_message})
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": error_message,
+                "sources": [],
+                "debug": {"error": str(exc)}
+            })
             st.error(error_message)
 
         rerun = getattr(st, "rerun", getattr(st, "experimental_rerun", None))
         if rerun:
             rerun()
-
-    render_chat(st.session_state.messages)
-
-    last_response = st.session_state.last_response or {}
-
-    sources = last_response.get("sources", []) or []
-    if sources:
-        with st.expander("📚 Fuentes utilizadas", expanded=True):
-            for idx, source in enumerate(sources, start=1):
-                title = source.get("title") or source.get("file_name") or "Sin título"
-                page = source.get("page")
-                score = source.get("score")
-                snippet = (source.get("snippet") or "").strip()
-                url = source.get("url")
-
-                header_parts = [f"**{idx}. {title}**"]
-                meta_bits: List[str] = []
-                if page is not None:
-                    meta_bits.append(f"p. **{page}**")
-                chunk_id = source.get("chunk_id")
-                if chunk_id:
-                    meta_bits.append(f"chunk **{chunk_id}**")
-                if score is not None:
-                    try:
-                        meta_bits.append(f"score **{float(score):.3f}**")
-                    except Exception:
-                        meta_bits.append(f"score {score}")
-
-                if meta_bits:
-                    header_parts.append(" — " + ", ".join(meta_bits))
-
-                st.markdown("".join(header_parts))
-
-                if snippet:
-                    st.markdown(f"> {snippet}")
-                if url:
-                    st.markdown(f"[Enlace]({url})")
-                st.markdown("")
-
-    if config["debug"] and last_response.get("debug"):
-        with st.expander("🛠️ Detalles Técnicos (Debug)"):
-            steps = last_response["debug"].get("steps")
-            st.json(steps if steps is not None else last_response["debug"])
-
 
 if __name__ == "__main__":
     main()
