@@ -2,6 +2,7 @@ import asyncio
 import os
 import logging
 from typing import List, Optional, Type
+from services.agent.app.tools.find_relevant_policies import FindRelevantPoliciesTool
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -94,12 +95,17 @@ class RetrieverInput(BaseModel):
     k: Optional[int] = Field(None, description="Número de documentos a recuperar (anula el defecto)")
 
 class HybridOpenSearchTool(BaseTool):
+    """
+    Ejecuta busqueda hibrida (BM25 + Embeddings con RRF) en OpenSearch
+    Ahora integra un *router de resumenes* que filtra por file_name antes de buscar
+    """
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = "hybrid_opensearch_search"
     description: str = (
         "Searches the OpenSearch index (BM25 + embeddings with RRF) and returns "
         "a list of relevant policy documents with their metadata."
+        "This tool first uses a summaries router to filter candidate PDFs."
     )
     args_schema: Type[BaseModel] = RetrieverInput
     haystack_retriever: OpenSearchHybridRetriever
@@ -108,6 +114,20 @@ class HybridOpenSearchTool(BaseTool):
         super().__init__()
         self.retriever = retriever
         self.reranker = CrossEncoderReranker()
+        self.router = FindRelevantPoliciesTool()
+
+    def _build_filters(self, candidate_files: List[str]) -> Optional[dict]:
+        """
+        Construye filtros compatibles con Haystack para restringir por metadata.file_name
+        """
+        if not candidate_files:
+            return None
+        # Opcion 1 (frecuente en Haystack 2.x):
+        return {"metadata": {"file_name": {"$in": candidate_files}}}
+        # Opcion 2 (algunas integraciones usan esta estructura):
+        # return {"operator": "AND", "conditions": [
+        #     {"field": "metadata.file_name", "operator": "in", "value": candidate_files}
+        # ]}
 
     def _run(
         self,
@@ -118,10 +138,14 @@ class HybridOpenSearchTool(BaseTool):
         try:
             # Recuperar documentos usando el retriever con k aumentado
             k_value = k or settings.retrieval_top_k
+            candidate_files = self.router(question=query, top_k=5)
+            logger.info("[Router] Candidates: %s", candidate_files)
+            filters = self._build_filters(candidate_files)
             results = self.haystack_retriever.run(
                 query=query,
                 top_k_bm25=k_value,
-                top_k_embedding=k_value
+                top_k_embedding=k_value,
+                filters=filters,
             )
             docs = _convert_docs(results.get("documents", []))
             
@@ -143,11 +167,16 @@ class HybridOpenSearchTool(BaseTool):
         try:
             # Recuperar documentos usando el retriever con k aumentado
             k_value = k or settings.retrieval_top_k
+            candidate_files = await asyncio.to_thread(self.router, question=query, top_k=5)
+            logger.info("[Router] Candidates: %s", candidate_files)
+            filters = self._build_filters(candidate_files)
+
             results = await asyncio.to_thread(
                 self.haystack_retriever.run,
                 query=query,
                 top_k_bm25=k_value,
-                top_k_embedding=k_value
+                top_k_embedding=k_value,
+                filters=filters,
             )
             docs = _convert_docs(results.get("documents", []))
             
