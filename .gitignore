@@ -29,6 +29,10 @@ Thumbs.db
 
 # Archivos locales
 ./web_search_cli.py
+.venv311/
+
+data/*.csv
+
 
 # Ignorar resultados de pruebas
 data/test/ragas_eval/results/

@@ -18,6 +18,8 @@ google-genai>=0.3
 # Embeddings / utilidades
 langchain-huggingface>=0.1,<2
 sentence-transformers>=2.7
+transformers>=4.38  # Para cross-encoders
+torch>=2.2.0       # PyTorch para cross-encoders
 pypdf>=4.2
 
 # Web search (Tavily)

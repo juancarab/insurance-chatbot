@@ -370,3 +370,40 @@ El runner vive en `services/agent/app/langchain_runner.py` y puede invocar:
 - Integrar retrieval real por defecto en `/chat`.
 - Afinar prompts del formatter (Gemini/LangChain).
 - Mejorar trazabilidad de `sources` y diagnósticos en `usage`.
+
+
+## Router multi-índice
+
+- **Activar venv 3.9 e instalar
+& .\.venv\Scripts\Activate.ps1
+python --version   # debe decir 3.9.x
+pip install -r requirements.txt
+pip install eval-type-backport==0.2.2 importlib-metadata==6.8.0 "zipp>=3.15"
+
+- **OpenSearch
+docker compose up -d opensearch
+curl.exe -s http://localhost:9200 | Out-String
+
+- **Ingesta PDFs → índice `policies`
+$env:OPENSEARCH_HOST = "http://localhost:9200"
+python .\data\pipeline\ingest.py
+curl.exe -s http://localhost:9200/policies/_count | Out-String  # debe ser > 0
+
+- **Probar localizador de pólizas (Etapa 1)
+$env:OPENSEARCH_HOST = "http://localhost:9200"
+python -m services.agent.app.tools.find_relevant_policies "coaseguro en el extranjero"
+
+- **Backend (elige uno)
+$env:PYTHONPATH = "services"
+
+- **LangChain (usa el retriever real)
+$env:INSURANCE_CHATBOT_FORMATTER = "langchain"
+$env:INSURANCE_CHATBOT_LANGCHAIN_RUNNER = "services.agent.app.langchain_runner:run_langchain_agent"
+uvicorn services.backend.app.main:app --reload --host 127.0.0.1 --port 8001
+
+- **Consultas de prueba
+Invoke-RestMethod http://127.0.0.1:8001/health
+'{"messages":[{"role":"user","content":"¿Cuál es el deducible anual de hospitalización?"}],"top_k":3,"enable_web_search":false,"debug":true,"language":"es"}' |
+  Set-Content -Path req1.json -Encoding utf8 -NoNewline
+curl.exe -s -X POST "http://127.0.0.1:8001/chat" -H "Content-Type: application/json; charset=utf-8" --data-binary "@req1.json"
+

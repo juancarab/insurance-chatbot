@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 class CrossEncoderReranker:
     """
-    Reranker basado en Cross-Encoder para reordenar documentos recuperados.
-    Utiliza el modelo ms-marco-MiniLM-L-6-v2 por defecto.
+    Cross-Encoder-based reranker used to reorder retrieved documents.
+    Uses the model 'ms-marco-MiniLM-L-6-v2' by default.
     """
 
     def __init__(
@@ -33,20 +33,30 @@ class CrossEncoderReranker:
             f"Initializing CrossEncoderReranker with model={self.model_name} "
             f"batch_size={self.batch_size} device={self.device}"
         )
+
         try:
             self.model = CrossEncoder(self.model_name, device=self.device)
         except Exception as e:
             logger.error(
                 f"Failed to load CrossEncoder model {self.model_name}. "
                 f"Ensure 'sentence-transformers', 'torch', and 'transformers' are installed. Error: {e}",
-                exc_info=True
+                exc_info=True,
             )
             raise
 
     def _prepare_pairs(
         self, query: str, documents: List[Document]
     ) -> List[Tuple[str, str]]:
-        """Prepara los pares query-documento para el cross-encoder."""
+        """
+        Prepare query-document pairs for cross-encoder scoring.
+
+        Args:
+            query: The user's query string.
+            documents: List of documents to be paired with the query.
+
+        Returns:
+            A list of (query, document_text) pairs.
+        """
         return [(query, doc.page_content) for doc in documents]
 
     def rerank(
@@ -56,25 +66,27 @@ class CrossEncoderReranker:
         top_k: Optional[int] = None,
     ) -> List[Document]:
         """
-        Reordena los documentos usando el cross-encoder.
+        Re-rank the retrieved documents using a cross-encoder model.
 
         Args:
-            query: La consulta del usuario
-            documents: Lista de documentos a reordenar
-            top_k: Número de documentos a retornar (usa settings.rerank_top_k por defecto)
+            query: The user query.
+            documents: List of retrieved documents to re-rank.
+            top_k: Number of top documents to return (defaults to settings.rerank_top_k).
 
         Returns:
-            Los top_k documentos reordenados por relevancia
+            A list of re-ranked documents, ordered by descending relevance score.
         """
         if not documents:
             return []
 
         settings = get_settings()
+        # Determine the effective number of documents to return
         effective_top_k = min(
             top_k or settings.rerank_top_k,
-            settings.rerank_top_k,
-            len(documents)
+            len(documents),
         )
+        if effective_top_k == 0:
+            return []
 
         pairs = self._prepare_pairs(query, documents)
 
@@ -85,21 +97,24 @@ class CrossEncoderReranker:
                 show_progress_bar=False,
             )
 
+            # Combine documents with their scores and sort by relevance
             doc_scores = list(zip(documents, scores))
             doc_scores.sort(key=lambda x: x[1], reverse=True)
 
             reranked_docs = []
             for doc, new_score in doc_scores[:effective_top_k]:
+                # Preserve initial score if it exists
                 if "score" in doc.metadata:
                     doc.metadata["initial_score"] = doc.metadata["score"]
-                
+
                 doc.metadata["rerank_score"] = float(new_score)
                 doc.metadata["score"] = float(new_score)
-                
+
                 reranked_docs.append(doc)
 
             return reranked_docs
 
         except Exception as e:
             logger.exception("Error during reranking: %s", e)
+            # Return original documents (limited by top_k) if reranking fails
             return documents[:effective_top_k]

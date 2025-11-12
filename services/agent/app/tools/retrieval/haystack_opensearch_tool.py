@@ -5,17 +5,25 @@ from typing import List, Optional, Type
 
 from pydantic import BaseModel, Field, ConfigDict
 
+from ...config import get_settings
+from .reranker import CrossEncoderReranker
+from ...tools.find_relevant_policies import FindRelevantPoliciesTool
+
 from langchain_core.documents import Document
 from langchain_core.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 
-from .reranker import CrossEncoderReranker
-from ...config import get_settings
-
+# Try to import OpenSearch backend depending on available package
 try:
     from opensearch_haystack.document_store import OpenSearchDocumentStore
     from opensearch_haystack.retriever import OpenSearchHybridRetriever
     _OS_BACKEND = "opensearch_haystack"
+    # Maintain original exception handling for robust OpenSearch error management
+    from opensearchpy import (
+        ConnectionError as OSConnectionError,
+        TransportError,
+        RequestError,
+    )
 except ModuleNotFoundError:
     from haystack_integrations.document_stores.opensearch import OpenSearchDocumentStore
     from haystack_integrations.components.retrievers.opensearch import (
@@ -23,14 +31,11 @@ except ModuleNotFoundError:
     )
     _OS_BACKEND = "haystack_integrations"
 
-try:
-    from opensearchpy import (
-        ConnectionError as OSConnectionError,
-        TransportError,
-        RequestError,
-    )
-except Exception:  
-    OSConnectionError = TransportError = RequestError = Exception
+    # Define placeholder exceptions if opensearchpy is not available
+    class OSConnectionError(Exception): pass
+    class TransportError(Exception): pass
+    class RequestError(Exception): pass
+
 
 from haystack.components.embedders import SentenceTransformersTextEmbedder
 from haystack.dataclasses import Document as HaystackDocument
@@ -39,14 +44,15 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
+# --- Configuration variables ---
 OPENSEARCH_HOST = settings.opensearch_host
 OPENSEARCH_PORT = settings.opensearch_port
 OPENSEARCH_INDEX = settings.opensearch_index
 EMBED_DIM = settings.opensearch_embed_dim
 EMBED_MODEL = settings.embedding_model
-
 RETRIEVAL_K_NET = settings.retrieval_top_k
 
+# --- Initialize OpenSearch document store ---
 doc_store = OpenSearchDocumentStore(
     hosts=[OPENSEARCH_HOST],
     port=OPENSEARCH_PORT,
@@ -58,8 +64,13 @@ doc_store = OpenSearchDocumentStore(
     metadata_field="metadata",
     knn_space_type="cosinesimil",
     knn_engine="nmslib",
+    username=settings.opensearch_user,
+    password=settings.opensearch_password,
+    use_ssl=settings.opensearch_use_ssl,
+    verify_certs=settings.opensearch_use_ssl,
 )
 
+# --- Embedder and retriever initialization ---
 query_embedder = SentenceTransformersTextEmbedder(
     model=EMBED_MODEL,
     normalize_embeddings=True,
@@ -73,14 +84,27 @@ haystack_retriever_instance = OpenSearchHybridRetriever(
     join_mode="reciprocal_rank_fusion",
 )
 
+# --- Initialize reranker ---
 try:
     reranker_instance = CrossEncoderReranker()
 except Exception as e:
     logger.error(f"Failed to initialize Reranker, retrieval will be degraded: {e}", exc_info=True)
     reranker_instance = None
 
+# --- Initialize the policy router (multi-index router) ---
+policy_finder_instance = FindRelevantPoliciesTool()
+
 
 def _convert_docs(haystack_docs: List[HaystackDocument]) -> List[Document]:
+    """
+    Convert Haystack Document objects into LangChain Document objects.
+
+    Args:
+        haystack_docs: List of Haystack documents retrieved from OpenSearch.
+
+    Returns:
+        List of LangChain Document instances with standardized metadata.
+    """
     out: List[Document] = []
     for h_doc in haystack_docs:
         raw_meta = dict(h_doc.meta or {})
@@ -102,38 +126,49 @@ def _convert_docs(haystack_docs: List[HaystackDocument]) -> List[Document]:
 
         out.append(Document(page_content=page_content, metadata=meta))
 
-    logger.debug("OpenSearch devolvió %d documentos", len(out))
+    logger.debug("OpenSearch returned %d documents", len(out))
     return out
 
 
 class RetrieverInput(BaseModel):
+    """Schema for the HybridOpenSearchTool input arguments."""
     query: str = Field(
-        description="User query to search insurance policy documents in OpenSearch"
+        description="User query to search insurance policy documents in OpenSearch."
     )
     k: Optional[int] = Field(
         None,
-        description="Número de documentos a recuperar (ignorado, usa config de reranker)",
+        description="Number of documents to retrieve (overrides default).",
     )
 
 
 class HybridOpenSearchTool(BaseTool):
+    """
+    Hybrid retriever tool combining BM25 and dense embeddings (RRF fusion)
+    with an optional reranking stage for maximum relevance.
+    Integrates a semantic router (FindRelevantPoliciesTool) for multi-index routing.
+    """
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = "hybrid_opensearch_search"
     description: str = (
-        "Busca en el índice de OpenSearch (BM25 + embeddings + RRF) y devuelve "
-        "una lista de documentos de pólizas de seguros chilenos con su metadata (archivo, página, score). "
-        "Aplica reranking para máxima precisión. "
-        "En caso de error devuelve un documento con el error en metadata['error']."
+        "Searches the OpenSearch index (BM25 + embeddings + RRF) and returns "
+        "a list of Chilean insurance policy documents with metadata (file, page, score). "
+        "Applies reranking for improved precision. "
+        "In case of error, returns a document containing the error in metadata['error']."
     )
     args_schema: Type[BaseModel] = RetrieverInput
     haystack_retriever: OpenSearchHybridRetriever
     reranker: Optional[CrossEncoderReranker]
+    policy_finder: FindRelevantPoliciesTool
+
+    def __init__(self, **data):
+        super().__init__(**data)
 
     def _return_error_doc(self, msg: str, error_type: str, exc: Exception | None = None) -> List[Document]:
+        """Return a standardized document containing error information."""
         return [
             Document(
-                page_content="No se pudo consultar OpenSearch.",
+                page_content="Unable to query OpenSearch.",
                 metadata={
                     "error": msg,
                     "error_type": error_type,
@@ -149,50 +184,65 @@ class HybridOpenSearchTool(BaseTool):
         k: Optional[int] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> List[Document]:
-        
-        bm25_k = RETRIEVAL_K_NET
-        emb_k = RETRIEVAL_K_NET
+        """
+        Synchronous retrieval and reranking pipeline.
+
+        Steps:
+            1. Use the policy router to filter relevant indices/files.
+            2. Retrieve documents using OpenSearchHybridRetriever.
+            3. Apply CrossEncoder reranker if available.
+        """
+        try:
+            relevant_files = self.policy_finder(query, top_k=settings.retrieval_top_k // 2)
+            file_filters = [{"terms": {"metadata.file_name": relevant_files}}] if relevant_files else None
+            logger.debug(f"HybridOpenSearchTool: Files selected by router: {relevant_files}")
+        except Exception as e:
+            logger.warning(f"Router (FindRelevantPoliciesTool) failed: {e}. Continuing without file filter.")
+            file_filters = None
+
+        effective_k = k or RETRIEVAL_K_NET
 
         try:
             results = self.haystack_retriever.run(
                 query=query,
-                top_k_bm25=bm25_k,
-                top_k_embedding=emb_k,
+                top_k_bm25=effective_k,
+                top_k_embedding=effective_k,
+                filters={"operator": "AND", "filters": file_filters} if file_filters else None,
             )
             docs = _convert_docs(results.get("documents", []))
-            
+
             if docs and self.reranker:
-                logger.debug(f"Reranking {len(docs)} docs for query: {query}")
+                logger.debug(f"Reranking {len(docs)} documents for query: {query}")
                 docs = self.reranker.rerank(query, docs)
-                logger.debug(f"Reranking returned {len(docs)} docs")
+                logger.debug(f"Reranking returned {len(docs)} documents")
             elif docs:
                 docs = docs[:settings.rerank_top_k]
-            
+
             return docs
 
         except OSConnectionError as e:
-            logger.error("No se pudo conectar a OpenSearch en %s: %s", OPENSEARCH_HOST, e, exc_info=True)
+            logger.error("Unable to connect to OpenSearch at %s: %s", OPENSEARCH_HOST, e, exc_info=True)
             return self._return_error_doc(
                 "Error: Unable to connect to the OpenSearch database.",
                 "connection_error",
                 e,
             )
         except RequestError as e:
-            logger.warning("Consulta inválida a OpenSearch. query=%s error=%s", query, e, exc_info=True)
+            logger.warning("Invalid OpenSearch query: %s, error=%s", query, e, exc_info=True)
             return self._return_error_doc(
                 f"Error: Invalid Query OpenSearch ({e.error}).",
                 "request_error",
                 e,
             )
         except TransportError as e:
-            logger.error("Error de transporte con OpenSearch (status %s): %s", getattr(e, "status_code", "?"), e, exc_info=True)
+            logger.error("OpenSearch transport error (status %s): %s", getattr(e, "status_code", "?"), e, exc_info=True)
             return self._return_error_doc(
                 f"Error: Transport error with OpenSearch (status {getattr(e, 'status_code', 'unknown')}).",
                 "transport_error",
                 e,
             )
         except Exception as e:
-            logger.exception("HybridOpenSearchTool._run failed inesperadamente")
+            logger.exception("HybridOpenSearchTool._run failed unexpectedly")
             return self._return_error_doc(
                 f"Error: Internal search unavailable ({type(e).__name__}).",
                 "unexpected_error",
@@ -202,61 +252,75 @@ class HybridOpenSearchTool(BaseTool):
     async def _arun(
         self,
         query: str,
-        k: Optional[int] = None, 
+        k: Optional[int] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> List[Document]:
-        
-        bm25_k = RETRIEVAL_K_NET
-        emb_k = RETRIEVAL_K_NET
+        """
+        Asynchronous retrieval and reranking pipeline.
+        Mirrors the synchronous _run() method using asyncio for concurrent operations.
+        """
+        try:
+            relevant_files = await asyncio.to_thread(self.policy_finder, query, top_k=settings.retrieval_top_k // 2)
+            file_filters = [{"terms": {"metadata.file_name": relevant_files}}] if relevant_files else None
+            logger.debug(f"ASYNC HybridOpenSearchTool: Files selected by router: {relevant_files}")
+        except Exception as e:
+            logger.warning(f"ASYNC Router (FindRelevantPoliciesTool) failed: {e}. Continuing without file filter.")
+            file_filters = None
+
+        effective_k = k or RETRIEVAL_K_NET
 
         try:
             results = await asyncio.to_thread(
                 self.haystack_retriever.run,
                 query=query,
-                top_k_bm25=bm25_k,
-                top_k_embedding=emb_k,
+                top_k_bm25=effective_k,
+                top_k_embedding=effective_k,
+                filters={"operator": "AND", "filters": file_filters} if file_filters else None,
             )
             docs = _convert_docs(results.get("documents", []))
-            
+
             if docs and self.reranker:
-                logger.debug(f"Async Reranking {len(docs)} docs for query: {query}")
+                logger.debug(f"Async reranking {len(docs)} documents for query: {query}")
                 docs = await asyncio.to_thread(self.reranker.rerank, query, docs)
-                logger.debug(f"Async Reranking returned {len(docs)} docs")
+                logger.debug(f"Async reranking returned {len(docs)} documents")
             elif docs:
                 docs = docs[:settings.rerank_top_k]
-                
+
             return docs
 
         except OSConnectionError as e:
-            logger.error("ASYNC: no se pudo conectar a OpenSearch: %s", e, exc_info=True)
+            logger.error("ASYNC: Unable to connect to OpenSearch: %s", e, exc_info=True)
             return self._return_error_doc(
                 "Error: Unable to connect to the OpenSearch database.",
                 "connection_error",
                 e,
             )
         except RequestError as e:
-            logger.warning("ASYNC: consulta inválida. query=%s error=%s", query, e, exc_info=True)
+            logger.warning("ASYNC: Invalid OpenSearch query: %s, error=%s", query, e, exc_info=True)
             return self._return_error_doc(
                 f"Error: Invalid Query OpenSearch ({e.error}).",
                 "request_error",
                 e,
             )
         except TransportError as e:
-            logger.error("ASYNC: error de transporte: %s", e, exc_info=True)
+            logger.error("ASYNC: OpenSearch transport error: %s", e, exc_info=True)
             return self._return_error_doc(
                 f"Error: Transport error with OpenSearch (status {getattr(e, 'status_code', 'unknown')}).",
                 "transport_error",
                 e,
             )
         except Exception as e:
-            logger.exception("HybridOpenSearchTool._arun failed inesperadamente")
+            logger.exception("HybridOpenSearchTool._arun failed unexpectedly")
             return self._return_error_doc(
                 f"Error: Internal search unavailable ({type(e).__name__}).",
                 "unexpected_error",
                 e,
             )
 
+
+# --- Instantiate the retrieval tool with dependencies ---
 retrieval_tool = HybridOpenSearchTool(
     haystack_retriever=haystack_retriever_instance,
-    reranker=reranker_instance
+    reranker=reranker_instance,
+    policy_finder=policy_finder_instance,
 )
