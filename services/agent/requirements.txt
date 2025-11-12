@@ -28,6 +28,8 @@ langchain-tavily>=0.1
 haystack-ai>=2.0
 opensearch-haystack>=4.0
 opensearch-py>=2.6
+transformers>=4.38
+torch>=2.2.0
 
 # Tests del agente
 pytest>=8

@@ -9,6 +9,9 @@ from langchain_core.documents import Document
 from langchain_core.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 
+from .reranker import CrossEncoderReranker
+from ...config import get_settings
+
 try:
     from opensearch_haystack.document_store import OpenSearchDocumentStore
     from opensearch_haystack.retriever import OpenSearchHybridRetriever
@@ -34,14 +37,19 @@ from haystack.dataclasses import Document as HaystackDocument
 
 logger = logging.getLogger(__name__)
 
-OPENSEARCH_HOST = os.getenv("OPENSEARCH_HOST", "http://opensearch")
-OPENSEARCH_PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
-OPENSEARCH_INDEX = os.getenv("OPENSEARCH_INDEX", "policies")
-EMBED_DIM = int(os.getenv("OPENSEARCH_EMBED_DIM", "384"))
-EMBED_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+settings = get_settings()
+
+OPENSEARCH_HOST = settings.opensearch_host
+OPENSEARCH_PORT = settings.opensearch_port
+OPENSEARCH_INDEX = settings.opensearch_index
+EMBED_DIM = settings.opensearch_embed_dim
+EMBED_MODEL = settings.embedding_model
+
+RETRIEVAL_K_NET = settings.retrieval_top_k
 
 doc_store = OpenSearchDocumentStore(
     hosts=[OPENSEARCH_HOST],
+    port=OPENSEARCH_PORT,
     index=OPENSEARCH_INDEX,
     embedding_dim=EMBED_DIM,
     create_index=False,
@@ -60,10 +68,16 @@ query_embedder = SentenceTransformersTextEmbedder(
 haystack_retriever_instance = OpenSearchHybridRetriever(
     document_store=doc_store,
     embedder=query_embedder,
-    top_k_bm25=5,
-    top_k_embedding=5,
+    top_k_bm25=RETRIEVAL_K_NET,
+    top_k_embedding=RETRIEVAL_K_NET,
     join_mode="reciprocal_rank_fusion",
 )
+
+try:
+    reranker_instance = CrossEncoderReranker()
+except Exception as e:
+    logger.error(f"Failed to initialize Reranker, retrieval will be degraded: {e}", exc_info=True)
+    reranker_instance = None
 
 
 def _convert_docs(haystack_docs: List[HaystackDocument]) -> List[Document]:
@@ -98,7 +112,7 @@ class RetrieverInput(BaseModel):
     )
     k: Optional[int] = Field(
         None,
-        description="Número de documentos a recuperar (sobrescribe el defecto)",
+        description="Número de documentos a recuperar (ignorado, usa config de reranker)",
     )
 
 
@@ -107,12 +121,14 @@ class HybridOpenSearchTool(BaseTool):
 
     name: str = "hybrid_opensearch_search"
     description: str = (
-        "Busca en el índice de OpenSearch (BM25 + embeddings con RRF) y devuelve "
+        "Busca en el índice de OpenSearch (BM25 + embeddings + RRF) y devuelve "
         "una lista de documentos de pólizas de seguros chilenos con su metadata (archivo, página, score). "
+        "Aplica reranking para máxima precisión. "
         "En caso de error devuelve un documento con el error en metadata['error']."
     )
     args_schema: Type[BaseModel] = RetrieverInput
     haystack_retriever: OpenSearchHybridRetriever
+    reranker: Optional[CrossEncoderReranker]
 
     def _return_error_doc(self, msg: str, error_type: str, exc: Exception | None = None) -> List[Document]:
         return [
@@ -133,9 +149,9 @@ class HybridOpenSearchTool(BaseTool):
         k: Optional[int] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> List[Document]:
-        k_user = k or 5
-        bm25_k = max(k_user, 10)
-        emb_k = max(k_user, 10)
+        
+        bm25_k = RETRIEVAL_K_NET
+        emb_k = RETRIEVAL_K_NET
 
         try:
             results = self.haystack_retriever.run(
@@ -144,7 +160,15 @@ class HybridOpenSearchTool(BaseTool):
                 top_k_embedding=emb_k,
             )
             docs = _convert_docs(results.get("documents", []))
-            return docs[:k_user]
+            
+            if docs and self.reranker:
+                logger.debug(f"Reranking {len(docs)} docs for query: {query}")
+                docs = self.reranker.rerank(query, docs)
+                logger.debug(f"Reranking returned {len(docs)} docs")
+            elif docs:
+                docs = docs[:settings.rerank_top_k]
+            
+            return docs
 
         except OSConnectionError as e:
             logger.error("No se pudo conectar a OpenSearch en %s: %s", OPENSEARCH_HOST, e, exc_info=True)
@@ -178,12 +202,12 @@ class HybridOpenSearchTool(BaseTool):
     async def _arun(
         self,
         query: str,
-        k: Optional[int] = None,
+        k: Optional[int] = None, 
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> List[Document]:
-        k_user = k or 5
-        bm25_k = max(k_user, 10)
-        emb_k = max(k_user, 10)
+        
+        bm25_k = RETRIEVAL_K_NET
+        emb_k = RETRIEVAL_K_NET
 
         try:
             results = await asyncio.to_thread(
@@ -193,7 +217,15 @@ class HybridOpenSearchTool(BaseTool):
                 top_k_embedding=emb_k,
             )
             docs = _convert_docs(results.get("documents", []))
-            return docs[:k_user]
+            
+            if docs and self.reranker:
+                logger.debug(f"Async Reranking {len(docs)} docs for query: {query}")
+                docs = await asyncio.to_thread(self.reranker.rerank, query, docs)
+                logger.debug(f"Async Reranking returned {len(docs)} docs")
+            elif docs:
+                docs = docs[:settings.rerank_top_k]
+                
+            return docs
 
         except OSConnectionError as e:
             logger.error("ASYNC: no se pudo conectar a OpenSearch: %s", e, exc_info=True)
@@ -224,7 +256,7 @@ class HybridOpenSearchTool(BaseTool):
                 e,
             )
 
-
 retrieval_tool = HybridOpenSearchTool(
-    haystack_retriever=haystack_retriever_instance
+    haystack_retriever=haystack_retriever_instance,
+    reranker=reranker_instance
 )

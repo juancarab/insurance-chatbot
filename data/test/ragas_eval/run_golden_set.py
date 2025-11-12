@@ -1,3 +1,5 @@
+# data/test/ragas_eval/run_golden_set.py
+
 from __future__ import annotations
 
 import json
@@ -21,7 +23,7 @@ def main() -> None:
     if args.output:
         output_path = ensure_output_path(Path(args.output))
     else:
-        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        ts = datetime.utcnow().strftime("%Y%M%d_%H%M%S")
         output_path = ensure_output_path(Path("results") / f"golden_{ts}.jsonl")
 
     print(f"Golden set: {golden_path} ({len(entries)} escenarios)")

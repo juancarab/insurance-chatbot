@@ -16,7 +16,7 @@ class AgentRunner:
         self.llm = ChatGoogleGenerativeAI(
             model=settings.gemini_model,
             google_api_key=settings.gemini_api_key,
-            temperature=settings.gemini_temperature or 0.2,
+            temperature=settings.gemini_temperature or 0.0,
             top_p=settings.gemini_top_p or 0.95,
             max_output_tokens=settings.gemini_max_output_tokens or 1024,
         )
@@ -72,7 +72,7 @@ class AgentRunner:
         final_sources = final_state.get("contexts", []) or []
         final_sources = sorted(
             final_sources,
-            key=lambda x: x.get("score", 0) or 0,
+            key=lambda x: x.get("rerank_score", x.get("score", 0) or 0),
             reverse=True,
         )
 
