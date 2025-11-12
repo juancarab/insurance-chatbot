@@ -18,6 +18,7 @@ try:
     from opensearch_haystack.document_store import OpenSearchDocumentStore
     from opensearch_haystack.retriever import OpenSearchHybridRetriever
     _OS_BACKEND = "opensearch_haystack"
+
     # Maintain original exception handling for robust OpenSearch error management
     from opensearchpy import (
         ConnectionError as OSConnectionError,
@@ -32,9 +33,14 @@ except ModuleNotFoundError:
     _OS_BACKEND = "haystack_integrations"
 
     # Define placeholder exceptions if opensearchpy is not available
-    class OSConnectionError(Exception): pass
-    class TransportError(Exception): pass
-    class RequestError(Exception): pass
+    class OSConnectionError(Exception):
+        pass
+
+    class TransportError(Exception):
+        pass
+
+    class RequestError(Exception):
+        pass
 
 
 from haystack.components.embedders import SentenceTransformersTextEmbedder
@@ -98,10 +104,8 @@ policy_finder_instance = FindRelevantPoliciesTool()
 def _convert_docs(haystack_docs: List[HaystackDocument]) -> List[Document]:
     """
     Convert Haystack Document objects into LangChain Document objects.
-
     Args:
         haystack_docs: List of Haystack documents retrieved from OpenSearch.
-
     Returns:
         List of LangChain Document instances with standardized metadata.
     """
@@ -178,6 +182,14 @@ class HybridOpenSearchTool(BaseTool):
             )
         ]
 
+    def _build_filters(self, candidate_files: List[str]) -> Optional[dict]:
+        """
+        Build Haystack-compatible filters to restrict retrieval by metadata.file_name.
+        """
+        if not candidate_files:
+            return None
+        return {"metadata": {"file_name": {"$in": candidate_files}}}
+
     def _run(
         self,
         query: str,
@@ -186,19 +198,18 @@ class HybridOpenSearchTool(BaseTool):
     ) -> List[Document]:
         """
         Synchronous retrieval and reranking pipeline.
-
         Steps:
             1. Use the policy router to filter relevant indices/files.
             2. Retrieve documents using OpenSearchHybridRetriever.
             3. Apply CrossEncoder reranker if available.
         """
         try:
-            relevant_files = self.policy_finder(query, top_k=settings.retrieval_top_k // 2)
-            file_filters = [{"terms": {"metadata.file_name": relevant_files}}] if relevant_files else None
-            logger.debug(f"HybridOpenSearchTool: Files selected by router: {relevant_files}")
+            candidate_files = self.policy_finder(query, top_k=settings.retrieval_top_k // 2)
+            filters = self._build_filters(candidate_files)
+            logger.debug(f"HybridOpenSearchTool: Files selected by router: {candidate_files}")
         except Exception as e:
             logger.warning(f"Router (FindRelevantPoliciesTool) failed: {e}. Continuing without file filter.")
-            file_filters = None
+            filters = None
 
         effective_k = k or RETRIEVAL_K_NET
 
@@ -207,7 +218,7 @@ class HybridOpenSearchTool(BaseTool):
                 query=query,
                 top_k_bm25=effective_k,
                 top_k_embedding=effective_k,
-                filters={"operator": "AND", "filters": file_filters} if file_filters else None,
+                filters=filters,
             )
             docs = _convert_docs(results.get("documents", []))
 
@@ -260,12 +271,12 @@ class HybridOpenSearchTool(BaseTool):
         Mirrors the synchronous _run() method using asyncio for concurrent operations.
         """
         try:
-            relevant_files = await asyncio.to_thread(self.policy_finder, query, top_k=settings.retrieval_top_k // 2)
-            file_filters = [{"terms": {"metadata.file_name": relevant_files}}] if relevant_files else None
-            logger.debug(f"ASYNC HybridOpenSearchTool: Files selected by router: {relevant_files}")
+            candidate_files = await asyncio.to_thread(self.policy_finder, query, top_k=settings.retrieval_top_k // 2)
+            filters = self._build_filters(candidate_files)
+            logger.debug(f"ASYNC HybridOpenSearchTool: Files selected by router: {candidate_files}")
         except Exception as e:
             logger.warning(f"ASYNC Router (FindRelevantPoliciesTool) failed: {e}. Continuing without file filter.")
-            file_filters = None
+            filters = None
 
         effective_k = k or RETRIEVAL_K_NET
 
@@ -275,7 +286,7 @@ class HybridOpenSearchTool(BaseTool):
                 query=query,
                 top_k_bm25=effective_k,
                 top_k_embedding=effective_k,
-                filters={"operator": "AND", "filters": file_filters} if file_filters else None,
+                filters=filters,
             )
             docs = _convert_docs(results.get("documents", []))
 
