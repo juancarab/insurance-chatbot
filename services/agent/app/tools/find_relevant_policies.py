@@ -1,7 +1,7 @@
 ﻿from typing import List
 from opensearchpy import OpenSearch
-from sentence_transformers import SentenceTransformer  # se deja por si luego reactivamos híbrido
-from services.agent.app.config import get_settings
+from sentence_transformers import SentenceTransformer 
+from agent.app.config import get_settings
 
 settings = get_settings()
 
@@ -11,9 +11,11 @@ SUMMARIES_INDEX = settings.policy_summaries_index
 def _make_client() -> OpenSearch:
     host_entry = str(settings.opensearch_host)
     hosts = [host_entry] if host_entry.startswith(("http://", "https://")) else [{"host": host_entry, "port": settings.opensearch_port}]
+    http_auth = (settings.opensearch_user, settings.opensearch_password) if settings.opensearch_user else None
+    
     return OpenSearch(
         hosts=hosts,
-        http_auth=(settings.opensearch_user, settings.opensearch_password) if settings.opensearch_user else None,
+        http_auth=http_auth,
         use_ssl=bool(settings.opensearch_use_ssl),
         verify_certs=False,
         ssl_show_warn=False,
@@ -25,10 +27,8 @@ class FindRelevantPoliciesTool:
 
     def __init__(self):
         self.client = _make_client()
-        # self.model = SentenceTransformer(EMBED_MODEL)  # no se usa en BM25
 
     def __call__(self, question: str, top_k: int = 5) -> List[str]:
-        # BM25 puro (compatibilidad OpenSearch 2.12)
         body_text = {
             "size": top_k,
             "_source": ["file_name"],

@@ -10,7 +10,7 @@ DIM = 384  # all-MiniLM-L6-v2 output dimension
 def get_client():
     # Connects to local OpenSearch in Docker (admin/admin)
     return OpenSearch(
-        [{"host": "localhost", "port": 9200}],
+        [{"host": "opensearch", "port": 9200}],
         http_auth=("admin", "admin"),
         use_ssl=False, verify_certs=False,
         ssl_show_warn=False, ssl_assert_hostname=False,

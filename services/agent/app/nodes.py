@@ -29,7 +29,7 @@ class AgentNodes:
             return ""
         contexts = sorted(
             contexts,
-            key=lambda x: x.get("score", 0) or 0,
+            key=lambda x: x.get("rerank_score", x.get("score", 0) or 0),
             reverse=True,
         )[: self.MAX_CONTEXT_DOCS]
 
