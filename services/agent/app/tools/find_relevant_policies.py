@@ -1,4 +1,5 @@
 ﻿from typing import List
+import sys
 from opensearchpy import OpenSearch
 from sentence_transformers import SentenceTransformer 
 from agent.app.config import get_settings
@@ -29,6 +30,8 @@ class FindRelevantPoliciesTool:
         self.client = _make_client()
 
     def __call__(self, question: str, top_k: int = 5) -> List[str]:
+        print(f"\n[ROUTER DEBUG] Buscando polizas candidatas para: '{question}' (top_k={top_k})", file=sys.stdout, flush=True)
+        
         body_text = {
             "size": top_k,
             "_source": ["file_name"],
@@ -39,13 +42,22 @@ class FindRelevantPoliciesTool:
                 }
             }
         }
-        hits = self.client.search(index=SUMMARIES_INDEX, body=body_text)["hits"]["hits"]
-        return [h["_source"]["file_name"] for h in hits]
+
+        print("k desde el codigo del retriever : ", top_k)
+
+        
+        try:
+            response = self.client.search(index=SUMMARIES_INDEX, body=body_text)
+            hits = response["hits"]["hits"]
+            
+            files = [h["_source"]["file_name"] for h in hits]
+            print(f"[ROUTER DEBUG] Archivos encontrados ({len(files)}): {files}", file=sys.stdout, flush=True)
+            
+            return files
+            
+        except Exception as e:
+            print(f"[ROUTER DEBUG] ⚠️ ERROR en la búsqueda del router: {e}", file=sys.stderr, flush=True)
+            return []
 
 def quick_find(query: str, top_k: int = 5) -> List[str]:
     return FindRelevantPoliciesTool()(query, top_k)
-
-if __name__ == "__main__":
-    import sys
-    q = " ".join(sys.argv[1:]) or "coaseguro en el extranjero"
-    print(quick_find(q))

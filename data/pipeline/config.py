@@ -35,5 +35,5 @@ OPENSEARCH_SHARDS = int(os.getenv("OPENSEARCH_SHARDS", "1"))
 OPENSEARCH_REPLICAS = int(os.getenv("OPENSEARCH_REPLICAS", "0"))
 
 # --- Ingestion ---
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 EMBED_BATCH_SIZE = int(os.getenv("EMBED_BATCH_SIZE", "128"))

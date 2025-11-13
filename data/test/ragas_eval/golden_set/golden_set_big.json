@@ -1,0 +1,786 @@
+[
+  {
+    "id": "S01",
+    "category": "simple",
+    "description": "Beneficio de hospitalización: qué incluye",
+    "reference_answer": "El beneficio de hospitalización cubre los gastos médicos mientras estás internado: días cama (habitación, alimentación y enfermería), servicios hospitalarios como urgencia, pabellón, UCI, exámenes e insumos, además de honorarios médicos y otros gastos prescritos durante la hospitalización, según los límites y condiciones indicados en las Condiciones Particulares.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Qué gastos cubre exactamente el beneficio de hospitalización de la póliza?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S02",
+    "category": "simple",
+    "description": "Ambulancia terrestre 50 km",
+    "reference_answer": "Sí, la póliza puede cubrir servicio de ambulancia para el traslado hacia o desde un hospital. En los planes que lo indiquen, suele establecerse un límite de distancia, por ejemplo un radio máximo de 50 km, y cualquier exceso o condiciones especiales se detallan en las Condiciones Particulares.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿La póliza cubre ambulancia y hay algún límite de distancia?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S03",
+    "category": "simple",
+    "description": "Prótesis quirúrgicas sin maxilofacial",
+    "reference_answer": "Sí, se pueden reembolsar prótesis fijas o removibles que sean consecuencia de una intervención quirúrgica cubierta por la póliza, siempre que la cobertura esté contratada. Sin embargo, la prótesis maxilofacial está expresamente excluida.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Las prótesis que necesito por una cirugía están cubiertas?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S04",
+    "category": "simple",
+    "description": "Cirugía dental por accidente con plazo",
+    "reference_answer": "Sí, la póliza cubre cirugía o tratamiento dental por accidente que afecte dientes naturales, siempre que el tratamiento se realice dentro de los 6 meses siguientes al accidente y la cobertura esté vigente en ese período.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Me rompí un diente en un accidente, ¿la póliza lo cubre?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S05",
+    "category": "simple",
+    "description": "Cobertura dentro y fuera de Chile",
+    "reference_answer": "Sí, la póliza puede otorgar cobertura a gastos médicos incurridos tanto dentro como fuera de Chile, siempre en los términos, límites y porcentajes que se indiquen para tu plan en las Condiciones Particulares.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Si me atiendo fuera de Chile, ¿igual tengo cobertura?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S06",
+    "category": "simple",
+    "description": "Definición de hospitalización (no domicilio)",
+    "reference_answer": "Se considera hospitalización cuando el asegurado está registrado como paciente de un hospital autorizado, por prescripción médica, utilizando habitación y enfermería al menos un día. La atención o asistencia médica en el domicilio no se considera hospitalización para efectos de la póliza.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Qué entienden ustedes por hospitalización? ¿sirve atención en casa?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S07",
+    "category": "simple",
+    "description": "Qué NO es accidente",
+    "reference_answer": "Sí, hay situaciones que no se consideran accidente para la póliza. Por ejemplo, no se consideran accidentes el suicidio, los ataques cardíacos o epilépticos, las enfermedades vasculares, los trastornos mentales ni las complicaciones derivadas de esos casos.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Hay cosas que no se consideren accidente en la póliza?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S08",
+    "category": "simple",
+    "description": "Gastos médicos razonables y acostumbrados",
+    "reference_answer": "La compañía reembolsa los gastos hasta el monto que considere razonable y acostumbrado, de acuerdo con el arancel del prestador o con valores de referencia. Si el costo de la atención supera ese valor, el exceso corre por cuenta del asegurado.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Cómo calculan cuánto me van a reembolsar por una atención?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S09",
+    "category": "simple",
+    "description": "Beneficio ambulatorio",
+    "reference_answer": "Sí, el beneficio ambulatorio cubre prestaciones sin hospitalización como consultas médicas, exámenes, procedimientos diagnósticos y cirugía ambulatoria, siempre que estén contemplados en el Cuadro de Beneficios o Condiciones Particulares de tu póliza.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿También cubren consultas y exámenes sin hospitalizarme?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S10",
+    "category": "simple",
+    "description": "Medicamentos ambulatorios 30 días",
+    "reference_answer": "Sí, se pueden reembolsar medicamentos recetados en forma ambulatoria, de acuerdo con los porcentajes y límites establecidos en las Condiciones Particulares. Normalmente se cubren tratamientos hasta por 30 días, según lo que indique tu plan.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Los medicamentos que me recete el doctor están cubiertos?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S11",
+    "category": "simple",
+    "description": "Carencia",
+    "reference_answer": "La póliza puede contemplar un período de carencia durante el cual pagas prima pero aún no tienes cobertura para ciertas prestaciones. La duración y el detalle de esa carencia se indican específicamente en las Condiciones Particulares de tu plan.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Desde qué momento empieza a correr la cobertura del seguro?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S12",
+    "category": "simple",
+    "description": "Monto máximo en Condiciones Particulares",
+    "reference_answer": "El monto máximo que te pueden reembolsar y los porcentajes de cobertura se indican en el Cuadro de Beneficios o Condiciones Particulares de tu póliza. El condicionado general solo define el marco y las reglas generales, pero los topes concretos están en ese cuadro.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Dónde veo el máximo que me pueden reembolsar?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S13",
+    "category": "simple",
+    "description": "Exclusión de tratamientos dentales no accidentales",
+    "reference_answer": "Los tratamientos dentales o maxilofaciales de tipo estético o que no se deban a un accidente normalmente están excluidos de la cobertura. Solo las prestaciones derivadas de un accidente y en las condiciones definidas pueden estar cubiertas.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Quiero hacerme un tratamiento dental estético, ¿me lo cubre el seguro?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S14",
+    "category": "simple",
+    "description": "Todo debe estar indicado en Condiciones Particulares",
+    "reference_answer": "No necesariamente tienes todas las coberturas que aparecen en la póliza general. Solo aplican aquellas que están expresamente contratadas e indicadas en tus Condiciones Particulares o Cuadro de Beneficios.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Todas las coberturas que salen en la póliza general las tengo yo?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "F01",
+    "category": "follow_up",
+    "description": "Seguimiento ambulancia > 50 km",
+    "reference_answer": "Si el traslado en ambulancia supera el radio máximo de distancia indicado en la póliza, por ejemplo 50 km, la parte que excede ese límite no está cubierta y corre por cuenta del asegurado, salvo que las Condiciones Particulares señalen algo distinto.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿La póliza cubre ambulancia y hay algún límite de distancia?" },
+        { "role": "assistant", "content": "Sí, cubre traslado terrestre dentro de un radio de 50 km hacia o desde un hospital." },
+        { "role": "user", "content": "¿Y si el hospital está más lejos que esos 50 km?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F02",
+    "category": "follow_up",
+    "description": "Seguimiento cirugía dental por accidente después de 6 meses",
+    "reference_answer": "No, la cirugía o tratamiento dental por accidente solo está cubierta si se realiza dentro de los seis meses posteriores al accidente y con la póliza vigente. Si el tratamiento se realiza ocho meses después, ya no se cumple el plazo y no aplica la cobertura.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Me rompí un diente en un accidente, ¿la póliza lo cubre?" },
+        { "role": "assistant", "content": "Sí, la póliza cubre cirugía dental por accidente a dientes naturales si se hace dentro de 6 meses." },
+        { "role": "user", "content": "Lo quiero hacer 8 meses después, ¿igual me lo pagan?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F03",
+    "category": "follow_up",
+    "description": "Seguimiento prótesis maxilofacial excluida",
+    "reference_answer": "No, la prótesis maxilofacial está expresamente excluida de la cobertura, incluso cuando otras prótesis fijas o removibles derivadas de una cirugía sí puedan ser reembolsadas según las condiciones de la póliza.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Las prótesis que necesito por una cirugía están cubiertas?" },
+        { "role": "assistant", "content": "Sí, se cubren prótesis fijas o removibles requeridas por una cirugía, excepto las maxilofaciales." },
+        { "role": "user", "content": "Justo la mía es maxilofacial, ¿esa sí la pagan?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F04",
+    "category": "follow_up",
+    "description": "Seguimiento hospitalización en domicilio",
+    "reference_answer": "No, la hospitalización no considera asistencia domiciliaria. Para que se considere hospitalización, el asegurado debe estar registrado como paciente en un hospital autorizado y usar habitación y servicio de enfermería; la visita de un médico al domicilio no se toma como hospitalización.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Qué entienden ustedes por hospitalización? ¿sirve atención en casa?" },
+        { "role": "assistant", "content": "Hospitalización es estar inscrito en un hospital autorizado usando habitación y enfermería." },
+        { "role": "user", "content": "Entonces si el médico viene a mi casa, ¿eso no cuenta?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "E01",
+    "category": "exclusion",
+    "description": "Accidente fuera de Chile (POL120190177)",
+    "reference_answer": "No, la póliza de accidentes personales POL120190177 no cubre el accidente si ocurrió fuera de Chile. Uno de los requisitos de cobertura es que el accidente haya ocurrido dentro del territorio nacional.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Tuve un accidente en Argentina, ¿esta póliza me cubre?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "E02",
+    "category": "exclusion",
+    "description": "Exclusión por ebriedad (POL120190177)",
+    "reference_answer": "No, la póliza POL120190177 excluye las lesiones que ocurran a causa o con ocasión del estado de ebriedad o por efectos de drogas. En esos casos, los gastos no quedan cubiertos.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Si me accidento estando ebrio, ¿tengo cobertura?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "E03",
+    "category": "exclusion",
+    "description": "Exclusión deportes riesgosos (ski, buceo)",
+    "reference_answer": "No, la póliza excluye las lesiones derivadas de ciertas actividades riesgosas, como el ski (dentro o fuera de pistas) y la inmersión submarina a más de 20 metros de profundidad. Esos eventos no quedan cubiertos.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Me cubre si me accidento esquiando o buceando?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "E04",
+    "category": "exclusion",
+    "description": "Exclusión arriendo silla de ruedas",
+    "reference_answer": "No, la póliza excluye explícitamente la adquisición o el arriendo de equipos como sillas de ruedas, camas médicas y otros elementos similares, por lo que esos gastos no se reembolsan.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Me reembolsan el arriendo de una silla de ruedas?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "E08",
+    "category": "exclusion",
+    "description": "Exclusión Pandemias (POL320210210)",
+    "reference_answer": "No, la póliza POL320210210 excluye los gastos originados por epidemias o pandemias declaradas por la autoridad competente. En esos casos, los gastos médicos no quedan cubiertos por esta póliza.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Si me enfermo en una pandemia declarada, ¿me cubre la póliza POL320210210?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "E09",
+    "category": "exclusion",
+    "description": "Exclusión medicina alternativa (acupuntura)",
+    "reference_answer": "No, los tratamientos de medicina alternativa como acupuntura, quiropraxia, reflexología y otros similares están excluidos de la cobertura. La póliza no reembolsa esas prestaciones.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿El seguro de alto costo me reembolsa sesiones de acupuntura o quiropraxia?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "E10",
+    "category": "exclusion",
+    "description": "Exclusión Lasik para presbicia (POL320130223)",
+    "reference_answer": "No, las cirugías necesarias para corregir la presbicia no están cubiertas bajo el beneficio de Cirugía Ocular Lasik de la póliza POL320130223. Ese tipo de cirugía queda excluida.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿La cirugía Lasik para corregir la presbicia está cubierta?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "E12",
+    "category": "exclusion",
+    "description": "Exclusión deportes extremos (parapente) (POL320130223)",
+    "reference_answer": "No, el parapente se considera un deporte riesgoso o extremo y está explícitamente excluido de la cobertura de la póliza. Un accidente practicando parapente no quedaría cubierto.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Si me accidento haciendo parapente, ¿me cubre el seguro colectivo?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "E13",
+    "category": "exclusion",
+    "description": "Exclusión accidente aunque tenga COVID (POL320210063)",
+    "reference_answer": "No, el seguro COVID-19 POL320210063 excluye los gastos derivados de lesiones sufridas en un accidente, incluso si la persona tiene COVID-19. Solo cubre gastos asociados directamente a la enfermedad COVID-19.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Tuve un accidente de auto y además tenía COVID. ¿Me cubre el seguro COVID los gastos del accidente?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "E14",
+    "category": "exclusion",
+    "description": "Exclusión Cirugía Maxilofacial (POL320200071)",
+    "reference_answer": "No, la cirugía maxilofacial está explícitamente listada como una exclusión en la póliza catastrófica POL320200071, por lo que ese tipo de intervención no queda cubierta.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿La póliza catastrófica POL320200071 cubre cirugía maxilofacial?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "E19",
+    "category": "exclusion",
+    "description": "Exclusión tratamiento por familiar médico (POL320200214)",
+    "reference_answer": "No, la póliza POL320200214 excluye cualquier tratamiento que haya sido realizado por el cónyuge, padres, hermanos o hijos del asegurado. Las atenciones hechas por esos familiares no son reembolsables.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Mi esposa es doctora y me atendió. ¿Puedo reembolsar esa consulta con la póliza POL320200214?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "E20",
+    "category": "exclusion",
+    "description": "Exclusión bariátrica > 60 años (POL320200214)",
+    "reference_answer": "No, en la póliza POL320200214 la cobertura para cirugía bariátrica está excluida para asegurados que ya hayan cumplido 60 años de edad. En ese caso la operación no queda cubierta.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Tengo 62 años, ¿puedo operarme de cirugía bariátrica con la póliza POL320200214?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "S15",
+    "category": "condition",
+    "description": "Quién debe hacer cirugía dental por accidente (POL120190177)",
+    "reference_answer": "No, la cirugía dental por accidente no la puede hacer cualquier profesional. El tratamiento debe ser efectuado por un médico cirujano maxilofacial o por un odontólogo, según indica la póliza.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿La cirugía dental por accidente la puede hacer cualquier dentista?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S16",
+    "category": "condition",
+    "description": "Cobertura de Hernia (solo estrangulada) (POL320180100)",
+    "reference_answer": "La póliza de emergencia quirúrgica POL320180100 excluye en general la cobertura de hernias. Solo hace una excepción para la hernia inguinal estrangulada, que sí puede estar cubierta como emergencia.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Tengo una hernia, ¿la cubre la póliza de emergencia?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "S18",
+    "category": "simple",
+    "description": "Detalle cirugía dental por accidente (POL320210210)",
+    "reference_answer": "En la póliza POL320210210, el beneficio de tratamiento de lesiones a dientes naturales por accidente incluye exámenes dentales, extracciones, empastes, tratamiento dental en general y el reemplazo de las piezas dentales accidentadas, según los límites del plan.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Qué incluye la cobertura de cirugía dental por accidente de la póliza de alto costo?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S19",
+    "category": "condition",
+    "description": "Renovación de deducible por evento (POL320210210)",
+    "reference_answer": "Si la enfermedad o accidente (evento) se prolonga más allá del plazo máximo indicado en las Condiciones Particulares, la póliza lo considera como un nuevo evento. Esto implica reinstalar el deducible y también el capital asegurado para ese nuevo evento.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Si mi enfermedad se prolonga más allá del plazo del evento, ¿qué pasa con el deducible?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "S21",
+    "category": "condition",
+    "description": "Requisito beneficio maternidad (POL320130223)",
+    "reference_answer": "No, en el seguro colectivo POL320130223 solo se tiene derecho al beneficio de maternidad si la fecha probable de inicio del embarazo es posterior al inicio de vigencia de la cobertura. Si ya estabas embarazada al incorporarte, ese embarazo no queda cubierto por el beneficio.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Me incorporé al seguro colectivo estando embarazada, ¿tengo derecho al beneficio de maternidad?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S22",
+    "category": "simple",
+    "description": "Límite días hospitalización por parto (POL320130223)",
+    "reference_answer": "En la póliza POL320130223, el beneficio de maternidad cubre hasta el quinto día de hospitalización en caso de cesárea. Para parto normal o aborto involuntario, la cobertura se extiende normalmente hasta el tercer día de hospitalización.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Cuántos días de hospitalización por cesárea cubre el beneficio de maternidad?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "S23",
+    "category": "condition",
+    "description": "Requisito dioptrías para Lasik (POL320130223)",
+    "reference_answer": "No, con 3 dioptrías no cumplirías el requisito mínimo. Para que la cirugía ocular Lasik de la póliza POL320130223 tenga cobertura por miopía, hipermetropía o astigmatismo, se exige una pérdida de visión de al menos 5 dioptrías en cada ojo.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Tengo 3 dioptrías de miopía, ¿puedo operarme con la cobertura Lasik del seguro colectivo?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "S24",
+    "category": "simple",
+    "description": "Cobertura principal COVID (POL320210063)",
+    "reference_answer": "El seguro obligatorio COVID-19 POL320210063 financia o reembolsa los gastos de hospitalización y rehabilitación asociados a la enfermedad COVID-19, y además contempla una indemnización en caso de fallecimiento del asegurado cuya causa básica sea COVID-19.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Qué cubre el seguro obligatorio COVID-19?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S25",
+    "category": "condition",
+    "description": "Requisito para seguro COVID (presencial) (POL320210063)",
+    "reference_answer": "El seguro obligatorio COVID-19 POL320210063 está pensado para trabajadores del sector privado con contrato sujeto al Código del Trabajo que desarrollan sus labores de manera presencial, total o parcial. Si estás 100% en teletrabajo, en principio no correspondería esta cobertura, salvo que la normativa o tu contrato indiquen lo contrario.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Soy trabajador privado pero estoy 100% en teletrabajo. ¿Tengo el seguro COVID?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "S26",
+    "category": "simple",
+    "description": "Monto indemnización fallecimiento COVID (POL320210063)",
+    "reference_answer": "En caso de fallecimiento del asegurado cuya causa básica de defunción sea COVID-19, la póliza POL320210063 paga una indemnización equivalente a 180 unidades de fomento (UF).",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Cuál es el monto de indemnización por fallecimiento por COVID-19?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "S27",
+    "category": "simple",
+    "description": "Carencia y deducible COVID (POL320210063)",
+    "reference_answer": "No, el seguro obligatorio COVID-19 POL320210063 no contempla períodos de carencia ni deducibles. La cobertura aplica sin esas restricciones, de acuerdo con las condiciones de la póliza.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿El seguro COVID tiene período de carencia o deducible?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "S28",
+    "category": "condition",
+    "description": "Requisito accidente en rodilla (fractura/ruptura) (POL320200214)",
+    "reference_answer": "En la póliza POL320200214, para ciertos sectores como rodillas, nariz, ligamentos, columna y articulaciones mayores, solo se considera accidente si existe fractura, ruptura o politraumatismos. Un golpe fuerte sin fractura en la rodilla podría no ser considerado accidente bajo esta póliza.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Me lesioné la rodilla jugando futbol, fue un golpe fuerte pero sin fractura. ¿Se considera accidente para la póliza POL320200214?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "D02",
+    "category": "definition",
+    "description": "Definición Accidente (plazo 30 días) (POL320200214)",
+    "reference_answer": "En la póliza POL320200214, no se considera accidente cuando la primera atención médica se realiza después de 30 días desde el evento. Si vas al médico 40 días después, la compañía procesará el caso como una enfermedad y no como un accidente.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Qué pasa si tengo un accidente pero voy al médico 40 días después? (POL320200214)" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+  {
+    "id": "D03",
+    "category": "definition",
+    "description": "Definición Hospitalización (>23h) (POL320200214)",
+    "reference_answer": "Según la póliza POL320200214, se considera hospitalización cuando el asegurado permanece ingresado en una instalación hospitalaria por más de 23 horas para recibir atención médica o quirúrgica. Estancias más cortas pueden considerarse atenciones ambulatorias.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Cuánto tiempo debo estar en la clínica para que se considere hospitalización según la póliza POL320200214?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": false,
+      "language": "es"
+    }
+  },
+
+  {
+    "id": "F05",
+    "category": "follow_up",
+    "description": "Seguimiento prótesis maxilofacial (POL320180100)",
+    "reference_answer": "No, la póliza de emergencia quirúrgica POL320180100 indica explícitamente que las prótesis maxilofaciales están excluidas de la cobertura. Aunque se cubran otras prótesis, las maxilofaciales no se reembolsan.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿La póliza de emergencia quirúrgica cubre prótesis?" },
+        { "role": "assistant", "content": "Sí, cubre prótesis fijas o removibles requeridas por la intervención." },
+        { "role": "user", "content": "¿Incluso si es una prótesis maxilofacial?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F06",
+    "category": "follow_up",
+    "description": "Seguimiento cirugía estética (POL320210210)",
+    "reference_answer": "No, las cirugías estéticas que no sean necesarias a causa del accidente están explícitamente excluidas. Solo la cirugía plástica o cosmética requerida para tratar lesiones derivadas del accidente puede estar cubierta por la póliza POL320210210.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Me accidenté y necesito cirugía plástica, ¿está cubierta?" },
+        { "role": "assistant", "content": "Sí, la cirugía plástica o cosmética está cubierta si es necesaria a causa de una lesión accidental que ocurra mientras la póliza esté vigente." },
+        { "role": "user", "content": "Ok, ¿y si quiero aprovechar de hacerme otra cirugía estética que no es por el accidente?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F07",
+    "category": "follow_up",
+    "description": "Seguimiento cirugía miopía (general)",
+    "reference_answer": "No, la cirugía ocular para corregir vicios de refracción como miopía, astigmatismo o hipermetropía está generalmente excluida en las pólizas de salud. Solo se cubren cirugías oculares médicamente necesarias por enfermedad o accidente, según las condiciones del plan.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Qué cirugías oculares cubren?" },
+        { "role": "assistant", "content": "Las pólizas cubren cirugías oculares que sean médicamente necesarias por enfermedad o accidente." },
+        { "role": "user", "content": "¿Y la cirugía para la miopía?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F08",
+    "category": "follow_up",
+    "description": "Seguimiento arriendo cama clínica",
+    "reference_answer": "No, el arriendo de camas clínicas u otros equipos como sillas de ruedas está excluido de la cobertura. La póliza no reembolsa ese tipo de gastos, aunque sí cubra otros gastos de hospitalización.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Qué gastos de hospitalización están cubiertos?" },
+        { "role": "assistant", "content": "Se cubren los gastos de día cama, servicios hospitalarios (pabellón, insumos), honorarios médicos y prótesis." },
+        { "role": "user", "content": "Necesito arrendar una cama clínica para mi casa, ¿eso lo cubren?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F09",
+    "category": "follow_up",
+    "description": "Seguimiento quiropraxia",
+    "reference_answer": "No, las sesiones de quiropraxia se consideran medicina alternativa y están excluidas de la cobertura, al igual que la acupuntura y otros tratamientos similares. La póliza solo cubre tratamientos ambulatorios médicos tradicionales definidos en el plan.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "¿Qué tipo de tratamientos ambulatorios cubren?" },
+        { "role": "assistant", "content": "Se cubren consultas médicas, exámenes de laboratorio e imagenología, y procedimientos terapéuticos." },
+        { "role": "user", "content": "¿Las sesiones con el quiropráctico cuentan?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  },
+  {
+    "id": "F10",
+    "category": "follow_up",
+    "description": "Seguimiento accidente por ebriedad",
+    "reference_answer": "Sí, importa. Las pólizas excluyen las lesiones o enfermedades que ocurran a causa o con ocasión del estado de ebriedad o por la ingestión voluntaria de drogas, por lo que en esos casos los gastos pueden quedar fuera de cobertura.",
+    "payload": {
+      "messages": [
+        { "role": "user", "content": "Tuve un accidente, ¿qué cubre la póliza?" },
+        { "role": "assistant", "content": "La póliza cubre los gastos médicos de hospitalización y ambulatorios derivados de un accidente, como días cama, pabellón, honorarios médicos y prótesis." },
+        { "role": "user", "content": "¿Importa si estaba borracho cuando me accidenté?" }
+      ],
+      "top_k": 10,
+      "enable_web_search": false,
+      "debug": true,
+      "language": "es"
+    }
+  }
+]

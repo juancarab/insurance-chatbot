@@ -26,8 +26,11 @@ def render_sidebar() -> AppConfig:
     st.sidebar.markdown("---")
 
     st.sidebar.markdown("### 🎨 Interfaz")
-    theme = st.sidebar.selectbox("Tema", options=[Theme.LIGHT, Theme.DARK],
-                                 format_func=lambda x: "☀️ Claro" if x == Theme.LIGHT else "🌙 Oscuro")
+    theme = st.sidebar.selectbox(
+        "Tema",
+        options=[Theme.DARK, Theme.LIGHT],
+        format_func=lambda x: "☀️ Claro" if x == Theme.LIGHT else "🌙 Oscuro",
+    )
     language = st.sidebar.selectbox("Idioma de respuesta", options=["es", "en"],
                                     format_func=lambda x: "🇪🇸 Español" if x == "es" else "🇺🇸 English")
     show_timestamps = st.sidebar.checkbox("⏰ Mostrar timestamps", value=True)

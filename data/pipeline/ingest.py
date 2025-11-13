@@ -8,6 +8,7 @@ import os
 import glob
 import argparse
 import sys
+import re
 from typing import List, Dict
 
 from opensearchpy import OpenSearch, helpers
@@ -31,6 +32,7 @@ embedder = HuggingFaceEmbeddings(
 def load_pages(folder: str) -> List[Dict]:
     """
     Loads all PDF files from a folder into a list of page dictionaries.
+    Applies regex cleaning to fix broken lines and excessive whitespace.
     """
     pdfs = sorted(glob.glob(os.path.join(folder, "*.pdf")))
     if not pdfs:
@@ -39,12 +41,30 @@ def load_pages(folder: str) -> List[Dict]:
         
     pages = []
     print(f"Loading {len(pdfs)} PDF files from {folder}...")
+    
     for f in pdfs:
         try:
+            # PyPDFLoader carga cada página como un documento
             for i, d in enumerate(PyPDFLoader(f).load(), start=1):
-                t = (d.page_content or "").strip()
-                if t:
-                    pages.append({"file_name": os.path.basename(f), "page": i, "text": t})
+                raw_text = (d.page_content or "").strip()
+                
+                if raw_text:
+                    text_clean = re.sub(r'[ \t]+', ' ', raw_text)
+                    
+                    text_clean = re.sub(r'\n{2,}', '___PARAGRAPH___', text_clean)
+                    
+                    text_clean = re.sub(r'\n', ' ', text_clean)
+                    
+                    # Restaurar los párrafos reales
+                    text_clean = text_clean.replace('___PARAGRAPH___', '\n')
+                    text_clean = re.sub(r' +', ' ', text_clean).strip()
+                    
+                    pages.append({
+                        "file_name": os.path.basename(f), 
+                        "page": i, 
+                        "text": text_clean
+                    })
+                    
         except Exception as e:
             print(f"Error processing file {f}: {e}. Skipping.", file=sys.stderr)
             

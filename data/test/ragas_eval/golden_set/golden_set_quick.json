@@ -2,14 +2,11 @@
   {
     "id": "S01",
     "category": "simple",
-    "description": "Qué incluye la hospitalización",
-    "reference_answer": "Según las condiciones generales de las pólizas de gastos médicos, el beneficio de hospitalización cubre los gastos médicos provenientes de una hospitalización prescrita por un médico. Esto incluye: (1) días cama de hospitalización (habitación, alimentación y atención general de enfermería); (2) servicios hospitalarios no incluidos en el día cama, como salas de urgencia, derecho de pabellón, unidad de tratamiento intensivo o intermedio, exámenes de laboratorio e imagenología, procedimientos especiales, equipos, insumos y medicamentos hospitalarios; (3) honorarios médicos y de arsenalera por intervenciones quirúrgicas. Cuando la cobertura esté contratada en las Condiciones Particulares también se cubren prótesis quirúrgicas, cirugía dental por accidente, servicio privado de enfermería durante la hospitalización y servicio de ambulancia para el traslado desde y hacia el hospital dentro del radio indicado (habitualmente 50 km). Estas pólizas excluyen la hospitalización para fines de reposo y la originada en enfermedades psicológicas o psiquiátricas.",
+    "description": "Beneficio de hospitalización: qué incluye",
+    "reference_answer": "El beneficio de hospitalización cubre los gastos médicos mientras estás internado: días cama (habitación, alimentación y enfermería), servicios hospitalarios como urgencia, pabellón, UCI, exámenes e insumos, además de honorarios médicos y otros gastos prescritos durante la hospitalización, según los límites y condiciones indicados en las Condiciones Particulares.",
     "payload": {
       "messages": [
-        {
-          "role": "user",
-          "content": "¿Qué cosas cubre la hospitalización en mi seguro?"
-        }
+        { "role": "user", "content": "¿Qué gastos cubre exactamente el beneficio de hospitalización de la póliza?" }
       ],
       "top_k": 10,
       "enable_web_search": false,
@@ -20,14 +17,11 @@
   {
     "id": "S02",
     "category": "simple",
-    "description": "Ambulancia terrestre dentro de un radio",
-    "reference_answer": "Sí. Las pólizas de salud que subiste definen el servicio de ambulancia como el traslado del asegurado desde y hacia un hospital, normalmente vía terrestre y dentro de un radio máximo de 50 km respecto del hospital local. En algunos textos también se contempla ambulancia aérea para traslados de emergencia entre hospitales. La cobertura se aplica cuando el servicio está contratado y en los términos, porcentajes y límites señalados en las Condiciones Particulares.",
+    "description": "Ambulancia terrestre 50 km",
+    "reference_answer": "Sí, la póliza puede cubrir servicio de ambulancia para el traslado hacia o desde un hospital. En los planes que lo indiquen, suele establecerse un límite de distancia (por ejemplo, un radio máximo como 50 km) y cualquier exceso o condiciones especiales se detallan en las Condiciones Particulares.",
     "payload": {
       "messages": [
-        {
-          "role": "user",
-          "content": "¿Mi seguro paga ambulancia para ir al hospital?"
-        }
+        { "role": "user", "content": "¿La póliza cubre ambulancia y hay algún límite de distancia?" }
       ],
       "top_k": 10,
       "enable_web_search": false,
@@ -38,14 +32,11 @@
   {
     "id": "S03",
     "category": "simple",
-    "description": "Consultas y exámenes ambulatorios",
-    "reference_answer": "Sí, cuando está contratado el Beneficio Ambulatorio la compañía reembolsa o paga los gastos realizados sin hospitalización, en complemento de lo que cubra Isapre/Fonasa u otro seguro. Ese beneficio suele incluir: cirugía ambulatoria; consultas médicas; exámenes de laboratorio; imagenología (radiografías, ultrasonografía, medicina nuclear); y procedimientos diagnósticos o terapéuticos no quirúrgicos. Si en las Condiciones Particulares se estipula un deducible para este beneficio, la aseguradora solo reembolsará los gastos que excedan dicho deducible. Permanecen excluidas las consultas, exámenes, hospitalización o rehabilitación por enfermedades psiquiátricas o psicológicas y las hospitalizaciones para fines de reposo, salvo que se haya señalado expresamente lo contrario.",
+    "description": "Prótesis quirúrgicas sin maxilofacial",
+    "reference_answer": "Sí, se reembolsan prótesis fijas o removibles que sean consecuencia de una intervención quirúrgica cubierta por la póliza, siempre que la cobertura esté contratada. Sin embargo, la prótesis maxilofacial está expresamente excluida.",
     "payload": {
       "messages": [
-        {
-          "role": "user",
-          "content": "¿También cubre consultas y exámenes si no estoy hospitalizado?"
-        }
+        { "role": "user", "content": "¿Las prótesis que necesito por una cirugía están cubiertas?" }
       ],
       "top_k": 10,
       "enable_web_search": false,
@@ -56,14 +47,11 @@
   {
     "id": "S04",
     "category": "simple",
-    "description": "Deducible aplicado al beneficio ambulatorio",
-    "reference_answer": "El deducible es el monto que primero debe asumir el asegurado antes de que la compañía reembolse los gastos médicos. Está fijado en las Condiciones Particulares de la póliza y se aplica sobre el total de gastos una vez aplicado el plan de beneficios. La aseguradora sólo reembolsa la parte que excede ese deducible. Algunas pólizas contemplan además un 'deducible por solicitud de reembolso', que es un monto que se descuenta en cada solicitud una vez que el asegurado ha alcanzado el deducible general definido en la póliza.",
+    "description": "Cirugía dental por accidente con plazo",
+    "reference_answer": "Sí, la póliza cubre cirugía o tratamiento dental por accidente que afecte dientes naturales, siempre que el tratamiento se realice dentro de los 6 meses siguientes al accidente y la cobertura esté vigente en ese período.",
     "payload": {
       "messages": [
-        {
-          "role": "user",
-          "content": "¿Por qué me descuentan un deducible antes de reembolsar mis consultas?"
-        }
+        { "role": "user", "content": "Me rompí un diente en un accidente, ¿la póliza lo cubre?" }
       ],
       "top_k": 10,
       "enable_web_search": false,
@@ -75,13 +63,10 @@
     "id": "S05",
     "category": "simple",
     "description": "Cobertura dentro y fuera de Chile",
-    "reference_answer": "Sí. Estas pólizas permiten reembolsar gastos médicos efectuados tanto dentro de Chile como en el extranjero. En Chile, primero se debe usar la cobertura del sistema previsional (Isapre/Fonasa) y luego la póliza cubre el complemento. Fuera de Chile, la aseguradora suele actuar como compañía principal para los gastos cubiertos y mantiene el derecho a recuperar pagos de otras aseguradoras. Todo ello se hace según los porcentajes, límites y condiciones que queden indicados en las Condiciones Particulares.",
+    "reference_answer": "Sí, la póliza puede otorgar cobertura a gastos médicos incurridos tanto dentro como fuera de Chile, siempre en los términos, límites y porcentajes que se indiquen para tu plan en las Condiciones Particulares.",
     "payload": {
       "messages": [
-        {
-          "role": "user",
-          "content": "Si me atiendo fuera del país, ¿igual me cubre este seguro?"
-        }
+        { "role": "user", "content": "Si me atiendo fuera de Chile, ¿igual tengo cobertura?" }
       ],
       "top_k": 10,
       "enable_web_search": false,

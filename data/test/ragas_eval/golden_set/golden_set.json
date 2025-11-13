@@ -3,7 +3,7 @@
     "id": "S01",
     "category": "simple",
     "description": "Beneficio de hospitalización: qué incluye",
-    "reference_answer": "El beneficio de hospitalización cubre días cama (habitación, alimentación y enfermería), servicios hospitalarios como urgencia, pabellón, UCI, exámenes e insumos, honorarios médicos y otros gastos prescritos durante la hospitalización, conforme a lo indicado en las Condiciones Particulares.",
+    "reference_answer": "El beneficio de hospitalización cubre los gastos médicos mientras estás internado: días cama (habitación, alimentación y enfermería), servicios hospitalarios como urgencia, pabellón, UCI, exámenes e insumos, además de honorarios médicos y otros gastos prescritos durante la hospitalización, según los límites y condiciones indicados en las Condiciones Particulares.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Qué gastos cubre exactamente el beneficio de hospitalización de la póliza?" }
@@ -18,7 +18,7 @@
     "id": "S02",
     "category": "simple",
     "description": "Ambulancia terrestre 50 km",
-    "reference_answer": "La póliza cubre servicio de ambulancia terrestre para traslado hacia o desde un hospital dentro de un radio máximo de 50 km, siempre que esté contratada esa cobertura.",
+    "reference_answer": "Sí, la póliza puede cubrir servicio de ambulancia para el traslado hacia o desde un hospital. En los planes que lo indiquen, suele establecerse un límite de distancia (por ejemplo, un radio máximo como 50 km) y cualquier exceso o condiciones especiales se detallan en las Condiciones Particulares.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿La póliza cubre ambulancia y hay algún límite de distancia?" }
@@ -33,7 +33,7 @@
     "id": "S03",
     "category": "simple",
     "description": "Prótesis quirúrgicas sin maxilofacial",
-    "reference_answer": "Se reembolsan prótesis fijas o removibles que sean consecuencia de una intervención quirúrgica, pero se excluye la prótesis maxilofacial.",
+    "reference_answer": "Sí, se reembolsan prótesis fijas o removibles que sean consecuencia de una intervención quirúrgica cubierta por la póliza, siempre que la cobertura esté contratada. Sin embargo, la prótesis maxilofacial está expresamente excluida.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Las prótesis que necesito por una cirugía están cubiertas?" }
@@ -48,7 +48,7 @@
     "id": "S04",
     "category": "simple",
     "description": "Cirugía dental por accidente con plazo",
-    "reference_answer": "La cirugía o tratamiento dental por accidente a dientes naturales está cubierta si se realiza dentro de los 6 meses siguientes al accidente y la cobertura está vigente.",
+    "reference_answer": "Sí, la póliza cubre cirugía o tratamiento dental por accidente que afecte dientes naturales, siempre que el tratamiento se realice dentro de los 6 meses siguientes al accidente y la cobertura esté vigente en ese período.",
     "payload": {
       "messages": [
         { "role": "user", "content": "Me rompí un diente en un accidente, ¿la póliza lo cubre?" }
@@ -63,7 +63,7 @@
     "id": "S05",
     "category": "simple",
     "description": "Cobertura dentro y fuera de Chile",
-    "reference_answer": "La póliza puede otorgar cobertura a gastos médicos incurridos dentro y fuera de Chile, en los mismos términos de las Condiciones Particulares.",
+    "reference_answer": "Sí, la póliza puede otorgar cobertura a gastos médicos incurridos tanto dentro como fuera de Chile, siempre en los términos, límites y porcentajes que se indiquen para tu plan en las Condiciones Particulares.",
     "payload": {
       "messages": [
         { "role": "user", "content": "Si me atiendo fuera de Chile, ¿igual tengo cobertura?" }
@@ -78,7 +78,7 @@
     "id": "S06",
     "category": "simple",
     "description": "Definición de hospitalización (no domicilio)",
-    "reference_answer": "Se considera hospitalización cuando el asegurado está registrado como paciente de un hospital autorizado, por prescripción médica, usando habitación y enfermería al menos un día. No incluye asistencia domiciliaria.",
+    "reference_answer": "Se considera hospitalización cuando el asegurado está registrado como paciente en un hospital autorizado, por prescripción médica, utilizando habitación y servicio de enfermería al menos un día. La atención o asistencia médica en el domicilio no se considera hospitalización para efectos de esta póliza.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Qué entienden ustedes por hospitalización? ¿sirve atención en casa?" }
@@ -93,7 +93,7 @@
     "id": "S07",
     "category": "simple",
     "description": "Qué NO es accidente",
-    "reference_answer": "No se considera accidente el suicidio, ataques cardíacos o epilépticos, enfermedades vasculares, trastornos mentales ni complicaciones derivadas de esos casos.",
+    "reference_answer": "Sí, hay situaciones que no se consideran accidente para la póliza: por ejemplo suicidio, ataques cardíacos o epilépticos, enfermedades vasculares, trastornos mentales y complicaciones derivadas de esos casos, que se tratan como enfermedad o quedan excluidas según las condiciones del seguro.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Hay cosas que no se consideren accidente en la póliza?" }
@@ -108,7 +108,7 @@
     "id": "S08",
     "category": "simple",
     "description": "Gastos médicos razonables y acostumbrados",
-    "reference_answer": "La compañía reembolsa hasta el monto considerado razonable y acostumbrado según el arancel del prestador o valores de referencia, y el exceso corre por cuenta del asegurado.",
+    "reference_answer": "La compañía reembolsa los gastos hasta el monto que considere razonable y acostumbrado, de acuerdo con aranceles del prestador o valores de referencia. Si el costo de la atención supera ese valor, el exceso corre por cuenta del asegurado.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Cómo calculan cuánto me van a reembolsar por una atención?" }
@@ -123,7 +123,7 @@
     "id": "S09",
     "category": "simple",
     "description": "Beneficio ambulatorio",
-    "reference_answer": "El beneficio ambulatorio cubre prestaciones sin hospitalización como consultas médicas, exámenes, procedimientos diagnósticos y cirugía ambulatoria, si están indicados en las Condiciones Particulares.",
+    "reference_answer": "Sí, el beneficio ambulatorio cubre prestaciones sin hospitalización como consultas médicas, exámenes, procedimientos diagnósticos y cirugía ambulatoria, siempre que estén contemplados en el Cuadro de Beneficios o Condiciones Particulares de tu póliza.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿También cubren consultas y exámenes sin hospitalizarme?" }
@@ -138,7 +138,7 @@
     "id": "S10",
     "category": "simple",
     "description": "Medicamentos ambulatorios 30 días",
-    "reference_answer": "Se pueden reembolsar medicamentos recetados en forma ambulatoria, hasta los porcentajes y límites de las Condiciones Particulares, y normalmente hasta 30 días de tratamiento.",
+    "reference_answer": "Sí, se pueden reembolsar medicamentos recetados en forma ambulatoria, de acuerdo con los porcentajes y límites establecidos en las Condiciones Particulares. Normalmente se cubren tratamientos hasta por 30 días contados desde la fecha de compra de los medicamentos.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Los medicamentos que me recete el doctor están cubiertos?" }
@@ -153,7 +153,7 @@
     "id": "S11",
     "category": "simple",
     "description": "Carencia",
-    "reference_answer": "La póliza puede tener un período de carencia durante el cual se paga prima pero no se recibe cobertura; el plazo exacto se indica en las Condiciones Particulares.",
+    "reference_answer": "La póliza puede contemplar un período de carencia, durante el cual pagas prima pero aún no tienes cobertura para ciertas prestaciones. La duración y el detalle de esa carencia se indican específicamente en las Condiciones Particulares de tu plan.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Desde qué momento empieza a correr la cobertura del seguro?" }
@@ -168,7 +168,7 @@
     "id": "S12",
     "category": "simple",
     "description": "Monto máximo en Condiciones Particulares",
-    "reference_answer": "El monto máximo de gastos reembolsables y los porcentajes se indican en el Cuadro de Beneficios o Condiciones Particulares; la póliza general solo define el marco.",
+    "reference_answer": "El monto máximo que te pueden reembolsar y los porcentajes de cobertura se indican en el Cuadro de Beneficios o Condiciones Particulares de tu póliza. El condicionado general solo define el marco y las reglas generales, pero los topes concretos están en ese cuadro.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Dónde veo el máximo que me pueden reembolsar?" }
@@ -183,7 +183,7 @@
     "id": "S13",
     "category": "simple",
     "description": "Exclusión de tratamientos dentales no accidentales",
-    "reference_answer": "Los tratamientos dentales y maxilofaciales no derivados de accidente normalmente están excluidos.",
+    "reference_answer": "Los tratamientos dentales o maxilofaciales de tipo estético o que no deriven de un accidente están, en general, excluidos de la cobertura de la póliza. Solo las prestaciones derivadas de accidentes y en las condiciones definidas pueden estar cubiertas.",
     "payload": {
       "messages": [
         { "role": "user", "content": "Quiero hacerme un tratamiento dental estético, ¿me lo cubre el seguro?" }
@@ -198,7 +198,7 @@
     "id": "S14",
     "category": "simple",
     "description": "Todo debe estar indicado en Condiciones Particulares",
-    "reference_answer": "Las coberturas solo aplican si están expresamente indicadas como contratadas en las Condiciones Particulares.",
+    "reference_answer": "No necesariamente tienes todas las coberturas que aparecen en la póliza general: solo aplican aquellas que están expresamente contratadas e indicadas en tus Condiciones Particulares o Cuadro de Beneficios.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Todas las coberturas que salen en la póliza general las tengo yo?" }
@@ -214,7 +214,7 @@
     "id": "F01",
     "category": "follow_up",
     "description": "Seguimiento ambulancia > 50 km",
-    "reference_answer": "Si el traslado supera el radio máximo indicado (50 km), el exceso no está cubierto por la póliza.",
+    "reference_answer": "Si el traslado en ambulancia supera el radio máximo de distancia indicado en la póliza (por ejemplo, 50 km para ambulancia terrestre), la parte que excede ese límite no está cubierta y corre por cuenta del asegurado, salvo que las Condiciones Particulares indiquen algo distinto.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿La póliza cubre ambulancia y hay algún límite de distancia?" },
@@ -231,7 +231,7 @@
     "id": "F02",
     "category": "follow_up",
     "description": "Seguimiento cirugía dental por accidente después de 6 meses",
-    "reference_answer": "La cobertura exige que el tratamiento se realice dentro de los seis meses posteriores al accidente; fuera de ese plazo no aplica.",
+    "reference_answer": "No, la cirugía o tratamiento dental por accidente solo está cubierta si se realiza dentro de los seis meses siguientes al accidente, manteniendo la póliza vigente. Si decides hacerlo ocho meses después, esa prestación ya no estaría cubierta.",
     "payload": {
       "messages": [
         { "role": "user", "content": "Me rompí un diente en un accidente, ¿la póliza lo cubre?" },
@@ -248,7 +248,7 @@
     "id": "F03",
     "category": "follow_up",
     "description": "Seguimiento prótesis maxilofacial excluida",
-    "reference_answer": "La prótesis maxilofacial está expresamente excluida aunque las demás prótesis quirúrgicas sí se reembolsen.",
+    "reference_answer": "No, la prótesis maxilofacial está expresamente excluida de la cobertura, incluso cuando otras prótesis fijas o removibles derivadas de una cirugía sí puedan ser reembolsadas según las condiciones de la póliza.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Las prótesis que necesito por una cirugía están cubiertas?" },
@@ -265,7 +265,7 @@
     "id": "F04",
     "category": "follow_up",
     "description": "Seguimiento hospitalización en domicilio",
-    "reference_answer": "La póliza aclara que hospitalización no considera asistencia domiciliaria.",
+    "reference_answer": "No, la hospitalización no considera asistencia domiciliaria. Para que se considere hospitalización, el asegurado debe estar registrado como paciente en un hospital autorizado y hacer uso de habitación y enfermería; la visita de un médico al domicilio no se toma como hospitalización.",
     "payload": {
       "messages": [
         { "role": "user", "content": "¿Qué entienden ustedes por hospitalización? ¿sirve atención en casa?" },
@@ -283,7 +283,7 @@
     "id": "N01",
     "category": "negative",
     "description": "Prestaciones estéticas / cosméticas",
-    "reference_answer": "Las prestaciones de carácter estético, cosmético o que no respondan a una incapacidad cubierta no están dentro de las coberturas de la póliza.",
+    "reference_answer": "No, las cirugías o tratamientos de carácter estético o cosmético, incluidos los plásticos y similares que no respondan a una incapacidad cubierta, no están dentro de las coberturas de la póliza de gastos médicos.",
     "payload": {
       "messages": [
         { "role": "user", "content": "Quiero hacerme una cirugía estética, ¿me la cubre la póliza de gastos médicos?" }
@@ -298,7 +298,7 @@
     "id": "N02",
     "category": "negative",
     "description": "Eliminar deducible",
-    "reference_answer": "El deducible y los porcentajes de reembolso se fijan en las Condiciones Particulares y no pueden eliminarse por chat; solo cambiando plan o póliza.",
+    "reference_answer": "El deducible y los porcentajes de reembolso están fijados en las Condiciones Particulares de la póliza y no se pueden eliminar por chat en la póliza vigente. Para cambiar o reducir el deducible normalmente es necesario modificar el plan o contratar una póliza distinta.",
     "payload": {
       "messages": [
         { "role": "user", "content": "Quiero que me quiten el deducible de la póliza actual." }
@@ -313,7 +313,7 @@
     "id": "N03",
     "category": "negative",
     "description": "Información que no está en la póliza (red de hospitales extranjeros)",
-    "reference_answer": "La póliza solo dice que puede reembolsar dentro y fuera de Chile según lo contratado; no lista hospitales de otros países.",
+    "reference_answer": "La póliza solo señala que puede otorgar reembolso por atenciones dentro y fuera de Chile según lo contratado, pero no incluye un listado de hospitales específicos en el extranjero. La red de prestadores en otros países no se detalla en el condicionado general.",
     "payload": {
       "messages": [
         { "role": "user", "content": "Dime qué hospitales privados de Estados Unidos están en la red de esta póliza." }

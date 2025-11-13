@@ -61,6 +61,8 @@ services:
       - ./data/raw_policies:/app/data/raw_policies
       - ./eda_out:/app/eda_out
       - ./data/test/ragas_eval/results:/app/results
+      - hf-cache:/root/.cache/huggingface
 
 volumes:
   os-data:
+  hf-cache:
