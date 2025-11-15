@@ -1,19 +1,19 @@
-# Entornos virtuales
+# Virtual environments
 .venv/
 venv/
 env/
 
-# Variables de entorno
+# Environment variables
 .env
 *.env
 .env.*
 
-# Datos locales y salidas generadas
+# Local data and generated outputs
 data/raw_policies
 eda_out/
 *.log
 
-# Caché y builds de Python
+# Python cache and builds
 __pycache__/
 *.pyc
 *.pyo
@@ -21,18 +21,18 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 
-# Configuración de editores / sistema
+# Editor/system configuration
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
-# Archivos locales
+# Local files
 ./web_search_cli.py
 .venv311/
 
 data/*.csv
 
 
-# Ignorar resultados de pruebas
+# Ignore test results
 data/test/ragas_eval/results/

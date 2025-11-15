@@ -9,12 +9,12 @@ pypdf==6.1.3
 opensearch-py==2.8.0
 
 # --- RAGAS & Tests ---
-# Ragas es la dependencia principal que fijará las versiones de langchain
+# Ragas is the main dependency that will set the langchain versions.
 ragas==0.1.21
 datasets==2.18.0
 pytest==8.4.2
 
 # --- Embeddings (HF, Transformers) ---
-# Dejamos que pip encuentre una versión compatible
+# We let pip find a compatible version
 langchain-huggingface 
 sentence-transformers==5.1.2

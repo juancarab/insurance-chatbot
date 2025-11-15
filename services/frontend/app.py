@@ -1,4 +1,4 @@
-"""Streamlit frontend mejorado para Insurance Chatbot (refactor por módulos)."""
+"""Improved Streamlit frontend for Insurance Chatbot (refactored by modules)."""
 from __future__ import annotations
 import streamlit as st
 
@@ -12,7 +12,7 @@ from ui.panels import render_sources, render_metrics, render_debug_info
 
 def main():
     st.set_page_config(
-        page_title="Insurance Chatbot - Asistente Inteligente",
+        page_title="Insurance Chatbot - Smart Assistant",
         page_icon="🤖",
         layout="wide",
         initial_sidebar_state="expanded",
@@ -28,7 +28,7 @@ def main():
     st.markdown("""
         <div class="app-header">
             <h1>🤖 Insurance Chatbot</h1>
-            <p>Tu asistente inteligente para consultas sobre pólizas de seguro</p>
+            <p>Your smart assistant for insurance policy inquiries</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -51,9 +51,9 @@ def main():
     # Footer
     st.markdown("---")
     c1, c2, c3 = st.columns(3)
-    c1.markdown('<div style="text-align:center;color:#718096;"><small>🔒 Tus datos están seguros</small></div>', unsafe_allow_html=True)
+    c1.markdown('<div style="text-align:center;color:#718096;"><small>🔒 Your data is secure</small></div>', unsafe_allow_html=True)
     c2.markdown('<div style="text-align:center;color:#718096;"><small>⚡ Powered by AI</small></div>', unsafe_allow_html=True)
-    c3.markdown('<div style="text-align:center;color:#718096;"><small>📊 Análisis en tiempo real</small></div>', unsafe_allow_html=True)
+    c3.markdown('<div style="text-align:center;color:#718096;"><small>📊 Real-time analysis</small></div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()

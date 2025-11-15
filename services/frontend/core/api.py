@@ -31,10 +31,10 @@ def call_backend_api(
         response.raise_for_status()
         return response.json()
     except requests.exceptions.Timeout:
-        return {"error": "Timeout: El servidor tardó demasiado en responder"}
+        return {"error": "Timeout: The server took too long to respond."}
     except requests.exceptions.ConnectionError:
-        return {"error": "No se pudo conectar al servidor backend"}
+        return {"error": "Could not connect to the backend server"}
     except requests.exceptions.HTTPError as e:
-        return {"error": f"Error HTTP: {e.response.status_code}"}
+        return {"error": f"HTTP Error: {e.response.status_code}"}
     except Exception as e:
-        return {"error": f"Error inesperado: {str(e)}"}
+        return {"error": f"Unexpected Error: {str(e)}"}

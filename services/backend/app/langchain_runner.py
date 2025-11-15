@@ -10,9 +10,9 @@ def run_langchain_agent(
     debug: bool,
     language: str,
 ) -> Dict[str, Any]:
-    """Runner mínimo que responde con un placeholder amistoso y datos de depuración.
+    """Minimal runner that responds with a friendly placeholder and debugging data.
 
-    Sustituye esta implementación con tu orquestación real de LangChain/LangGraph.
+    Replace this implementation with your actual LangChain/LangGraph orchestration.
     """
 
     user_message = next(
@@ -21,9 +21,9 @@ def run_langchain_agent(
     )
 
     answer = (
-        "⚠️ Demo sin agente configurado."
-        "\nConfigura el runner de LangChain/LangGraph para obtener respuestas reales"
-        f" en {language}."
+        "⚠️ Demo without agent configured."
+        "\nConfigure the LangChain/LangGraph runner to obtain real answers"
+        f" in {language}."
     )
 
     return {

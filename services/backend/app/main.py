@@ -103,15 +103,15 @@ class MockAnswerFormatter:
             (message for message in reversed(messages) if message.role == "user"),
             None,
         )
-        question = latest_user_message.content if latest_user_message else "tu pregunta"
+        question = latest_user_message.content if latest_user_message else "your question"
         bullet_points = "\n".join(
             f"- {s.title or s.file_name or 'Fuente'}: {(s.snippet or '').strip()}"
             for s in contexts
         )
         answer = (
-            f"(mock) Respondiendo en {language}. "
-            "Cuando el LLM esté integrado, generará una respuesta fundamentada en las fuentes.\n\n"
-            f"Consulta: '{question}'\n{bullet_points}"
+            f"(mock) Responding n {language}. "
+            "Once the LLM is integrated, it will generate a response based on the sources.\n\n"
+            f"Request: '{question}'\n{bullet_points}"
         )
 
         if debug:
@@ -221,16 +221,16 @@ class GeminiAnswerFormatter:
             from google import genai  
         except ImportError as exc:
             raise RuntimeError(
-                "Para usar el formatter Gemini instala el SDK: `pip install google-genai`."
+                "To use the Gemini formatter, install the SDK: `pip install google-genai`."
             ) from exc
 
         api_key = settings.gemini_api_key
         if not api_key:
-            raise RuntimeError("GEMINI_API_KEY debe estar configurado.")
+            raise RuntimeError("GEMINI_API_KEY shoudl be configured.")
 
         model_name = settings.gemini_model
         if not model_name:
-            raise RuntimeError("GEMINI_MODEL debe estar configurado.")
+            raise RuntimeError("GEMINI_MODEL should be configured.")
 
         client = genai.Client(api_key=api_key)
 
@@ -373,7 +373,7 @@ async def chat_endpoint(request: ChatRequest) -> ChatResponse:
         logger.error("Formatter failed in /chat: %s", exc, exc_info=True)
         debug_payload = {"error": str(exc)} if request.debug else None
         return ChatResponse(
-            answer="Error: no se pudo generar la respuesta en este momento.",
+            answer="Error: The response could not be generated at this time.",
             sources=[],
             usage={
                 "retrieved_documents": 0,
@@ -389,7 +389,7 @@ async def chat_endpoint(request: ChatRequest) -> ChatResponse:
         logger.exception("Unexpected error in /chat")
         debug_payload = {"error": str(exc)} if request.debug else None
         return ChatResponse(
-            answer="Error: ocurrió un problema inesperado en el servidor.",
+            answer="Error: An unexpected problem occurred on the server.",
             sources=[],
             usage={
                 "retrieved_documents": 0,

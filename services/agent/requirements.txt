@@ -1,4 +1,4 @@
-# Servicio HTTP
+# HTTP Service
 fastapi==0.115.0
 uvicorn[standard]==0.30.0
 requests>=2.31.0
@@ -15,11 +15,11 @@ langgraph>=0.2.35,<0.3
 langchain-google-genai>=2.1,<3
 google-genai>=0.3
 
-# Embeddings / utilidades
+# Embeddings / utilities
 langchain-huggingface>=0.1,<2
 sentence-transformers>=2.7
-transformers>=4.38  # Para cross-encoders
-torch>=2.2.0       # PyTorch para cross-encoders
+transformers>=4.38  # For cross-encoders
+torch>=2.2.0       # PyTorch for cross-encoders
 pypdf>=4.2
 
 # Web search (Tavily)
@@ -33,5 +33,5 @@ opensearch-py>=2.6
 transformers>=4.38
 torch>=2.2.0
 
-# Tests del agente
+# Agent test
 pytest>=8

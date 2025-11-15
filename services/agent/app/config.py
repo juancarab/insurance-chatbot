@@ -7,8 +7,8 @@ from pydantic_settings import BaseSettings
 
 class AgentSettings(BaseSettings):
     """
-    Configuración del agente (independiente del backend).
-    Lee variables de entorno (.env o docker-compose).
+    Agent configuration (independent of the backend).
+    Reads environment variables (.env or docker-compose).
     """
 
     # --- Gemini (LangChain wrapper ChatGoogleGenerativeAI) ---
@@ -21,31 +21,31 @@ class AgentSettings(BaseSettings):
     # --- Tavily ---
     tavily_api_key: Optional[str] = Field(default=None, validation_alias="TAVILY_API_KEY")
 
-    # --- OpenSearch (índice principal) ---
+    # --- OpenSearch (main index) ---
     opensearch_host: str = Field(default="http://opensearch", validation_alias="OPENSEARCH_HOST")
     opensearch_port: int = Field(default=9200, validation_alias="OPENSEARCH_PORT") 
     opensearch_index: str = Field(default="policies", validation_alias="OPENSEARCH_INDEX")
     opensearch_embed_dim: int = Field(default=384, validation_alias="OPENSEARCH_EMBED_DIM") 
 
-    # --- Modelo de embeddings ---
+    # --- Embeddings model ---
     embedding_model: str = Field(
         default="sentence-transformers/all-MiniLM-L6-v2",
         validation_alias="EMBEDDING_MODEL",
     )
 
-    # --- Retrieval + Reranking (Combinación de ambas ramas) ---
+    # --- Retrieval + Reranking (Combination of both branches) ---
     retrieval_top_k: int = Field(default=40, validation_alias="RETRIEVAL_TOP_K")
     rerank_model: str = Field(default="cross-encoder/ms-marco-MiniLM-L-6-v2", validation_alias="RERANK_MODEL") 
     rerank_batch_size: int = Field(default=32, validation_alias="RERANK_BATCH_SIZE") 
     rerank_top_k: int = Field(default=10, validation_alias="RERANK_TOP_K") 
 
-    # --- OpenSearch (índice de resúmenes para el router semántico) ---
+    # --- OpenSearch (summary index for the semantic router) ---
     policy_summaries_index: str = Field(
         default="policy_summaries_index",
         validation_alias="POLICY_SUMMARIES_INDEX",
     ) 
 
-    # --- Seguridad/SSL opcional para OpenSearch ---
+    # --- Optional security/SSL for OpenSearch ---
     opensearch_user: Optional[str] = Field(default=None, validation_alias="OPENSEARCH_USER") 
     opensearch_password: Optional[str] = Field(default=None, validation_alias="OPENSEARCH_PASSWORD") 
     opensearch_use_ssl: bool = Field(default=False, validation_alias="OPENSEARCH_USE_SSL")
@@ -58,5 +58,5 @@ class AgentSettings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> AgentSettings:
-    """Carga la configuración desde .env (cacheada)"""
+    """Load configuration from .env (cached)"""
     return AgentSettings()

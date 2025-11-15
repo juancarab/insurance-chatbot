@@ -1,21 +1,21 @@
-## Flujo de Ingesta — recrear el índice desde cero
+## Intake Flow — recreate the index from scratch
 
-1) Preparar entorno
-   - Docker arriba: `docker compose up -d`
-   - Variables: usa `.env` (OPENSEARCH_HOST, OPENSEARCH_PORT, OPENSEARCH_USER, OPENSEARCH_PASSWORD, OPENSEARCH_INDEX, PDF_DIR, CHUNK_SIZE, CHUNK_OVERLAP).
+1) Prepare environment
+   - Docker up: `docker compose up -d`
+   - Variables: use `.env` (OPENSEARCH_HOST, OPENSEARCH_PORT, OPENSEARCH_USER, OPENSEARCH_PASSWORD, OPENSEARCH_INDEX, PDF_DIR, CHUNK_SIZE, CHUNK_OVERLAP).
 
-2) Crear índice
-   - Ejecuta: `python -m pipeline.setup_opensearch`
-   - El script debe **leer TODO desde variables de entorno** y crear/eliminar/crear el índice (si existe).
+2) Create index
+   - Run: `python -m pipeline.setup_opensearch`
+   - The script must **read EVERYTHING from environment variables** and create/delete/create the index (if it exists).
 
-3) EDA (opcional pero recomendado)
-   - Ejecuta: `python -m pipeline.eda_policies`
-   - Genera métricas y recomendaciones de chunking basadas en `PDF_DIR`.
+3) EDA (optional but recommended)
+   - Run: `python -m pipeline.eda_policies`
+   - Generates chunking metrics and recommendations based on `PDF_DIR`.
 
-4) Ingesta
-   - Ejecuta: `python -m pipeline.ingest`
-   - Lee PDFs desde `PDF_DIR`, parte en chunks (CHUNK_SIZE/CHUNK_OVERLAP), genera embeddings y hace `bulk` a `OPENSEARCH_INDEX`.
+4) Ingestion
+   - Run: `python -m pipeline.ingest`
+   - Reads PDFs from `PDF_DIR`, splits them into chunks (CHUNK_SIZE/CHUNK_OVERLAP), generates embeddings, and performs `bulk` to `OPENSEARCH_INDEX`.
 
-5) Validación rápida
+5) Fast validation
    - `curl -u admin:admin "http://localhost:9200/$env:OPENSEARCH_INDEX/_count?pretty"`
-   - Correr pruebas: `pytest -q`
+   - Run tests: `pytest -q`

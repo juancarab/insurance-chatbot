@@ -7,22 +7,22 @@ def render_tips_card():
                     border-radius:16px;padding:1.5rem;color:#fff;margin-bottom:1rem;">
             <h3 style="margin-top:0;">💡 Tips para mejores respuestas</h3>
             <ul style="margin-bottom:0;">
-                <li>Sé específico en tus preguntas</li>
-                <li>Pregunta sobre coberturas, exclusiones o límites</li>
-                <li>Haz preguntas de seguimiento</li>
-                <li>Activa la búsqueda web para información actualizada</li>
+                <li>Be specific in your questions.</li>
+                <li>Question about coverage, exclusions, or limits</li>
+                <li>Ask follow-up questions</li>
+                <li>Activate web search for updated information</li>
             </ul>
         </div>
     """, unsafe_allow_html=True)
 
 def render_suggestions(on_click: Callable[[str], None]):
-    st.markdown("### 🎯 Preguntas Sugeridas")
+    st.markdown("### 🎯 Suggested Questions")
     suggestions = [
-        "¿Qué cubre la póliza de hogar básica?",
-        "¿Cuáles son las exclusiones del seguro de auto?",
-        "¿Cuál es el límite de cobertura médica?",
-        "¿Cómo presento un reclamo?",
-        "¿Qué documentos necesito para una reclamación?",
+        "What does basic home insurance cover?",
+        "What are the exclusions from auto insurance?",
+        "What is the medical coverage limit?",
+        "How do I file a claim?",
+        "What documents do I need for a claim?",
     ]
     for s in suggestions:
         if st.button(f"💬 {s}", key=f"sugg_{hash(s)}", use_container_width=True):
