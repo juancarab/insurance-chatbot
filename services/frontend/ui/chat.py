@@ -73,7 +73,7 @@ def handle_user_query(text: str, config: AppConfig, chat_placeholder=None) -> No
             "timestamp": datetime.now().isoformat(),
         })
     else:
-        answer = response.get("answer", "No se recibió respuesta del servidor.")
+        answer = response.get("answer", "No response was received from the server.")
         st.session_state.messages.append({
             "role": "assistant",
             "content": answer,
@@ -104,7 +104,7 @@ def render_chat_area(config: AppConfig):
         unsafe_allow_html=True,
     )
 
-    prompt = st.chat_input("💬 Escribe tu consulta sobre seguros...")
+    prompt = st.chat_input("💬 Write your insurance query...")
     if prompt:
         handle_user_query(prompt, config, chat_placeholder)
 

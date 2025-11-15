@@ -44,7 +44,7 @@ def load_pages(folder: str) -> List[Dict]:
     
     for f in pdfs:
         try:
-            # PyPDFLoader carga cada página como un documento
+            # PyPDFLoader load each page as a document
             for i, d in enumerate(PyPDFLoader(f).load(), start=1):
                 raw_text = (d.page_content or "").strip()
                 
@@ -55,7 +55,7 @@ def load_pages(folder: str) -> List[Dict]:
                     
                     text_clean = re.sub(r'\n', ' ', text_clean)
                     
-                    # Restaurar los párrafos reales
+                    # Restore the actual paragraphs
                     text_clean = text_clean.replace('___PARAGRAPH___', '\n')
                     text_clean = re.sub(r' +', ' ', text_clean).strip()
                     

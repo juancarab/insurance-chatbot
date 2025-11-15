@@ -33,7 +33,7 @@ class AgentNodes:
             reverse=True,
         )[: self.MAX_CONTEXT_DOCS]
 
-        lines = ["\n\n## Documentos relevantes:"]
+        lines = ["\n\n## Relevant Documents:"]
         for c in contexts:
             title = c.get("title") or c.get("file_name") or "Fuente"
             page = c.get("page")
@@ -115,7 +115,7 @@ class AgentNodes:
         if not queries_to_fix or not history:
             return {}
         queries_str = "\n".join(
-            f'- ID_LLAMADA: "{tool_id}", CONSULTA_ORIGINAL: "{query}"'
+            f'- CALL_ID: "{tool_id}", ORIGINAL_REQUEST: "{query}"'
             for tool_id, query in queries_to_fix.items()
         )
 
@@ -151,10 +151,10 @@ class AgentNodes:
                 if tool_id in reformulated_queries:
                     candidate = (reformulated_queries.get(tool_id) or "").strip()
                     original_q = (queries_to_fix.get(tool_id) or "").strip()
-                    new_query = candidate or original_q or last_user_msg or "información de la póliza del usuario"
+                    new_query = candidate or original_q or last_user_msg or "user policy information"
                 else:
                     original_q = (queries_to_fix.get(tool_id) or "").strip()
-                    new_query = original_q or last_user_msg or "información de la póliza del usuario"
+                    new_query = original_q or last_user_msg or "user policy information"
 
                 new_args = (original_call.get("args") or {}).copy()
                 new_args["query"] = new_query
@@ -267,7 +267,7 @@ class AgentNodes:
             error = timed_result["error"]
             
             if error:
-                error_content = f"[ERROR] La herramienta '{tool.name}' falló con el error: {error}"
+                error_content = f"[ERROR] Tool '{tool.name}' failed with error: {error}"
                 if state.get("debug"):
                     debug_steps.append(
                         {

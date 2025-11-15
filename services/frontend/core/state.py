@@ -6,7 +6,7 @@ def init_session_state() -> None:
     if "messages" not in st.session_state:
         st.session_state.messages: List[Dict[str, Any]] = [{
             "role": "assistant",
-            "content": "👋 ¡Hola! Soy tu asistente especializado en seguros. ¿En qué puedo ayudarte hoy?",
+            "content": "👋 Hello! I'm your insurance specialist. How can I help you today?",
             "timestamp": datetime.now().isoformat()
         }]
     if "last_response" not in st.session_state:

@@ -7,9 +7,9 @@ def render_sidebar() -> AppConfig:
     st.sidebar.markdown("## ⚙️ Configuración")
 
     api_url = st.sidebar.text_input(
-        "🔗 URL del Backend",
+        "🔗 Backend URL",
         value=DEFAULT_API_URL,
-        help="URL del endpoint del chatbot (/chat)"
+        help="Chatbot endpoint URL (/chat)"
     )
 
     if check_api_status(api_url):
@@ -19,41 +19,41 @@ def render_sidebar() -> AppConfig:
 
     st.sidebar.markdown("---")
 
-    st.sidebar.markdown("### 🔍 Búsqueda")
-    top_k = st.sidebar.slider("Documentos a recuperar", 1, 10, 4)
-    enable_web_search = st.sidebar.checkbox("🌐 Habilitar búsqueda web", value=False)
+    st.sidebar.markdown("### 🔍 Search")
+    top_k = st.sidebar.slider("Documents to retrieve", 1, 10, 4)
+    enable_web_search = st.sidebar.checkbox("🌐 Enable web search", value=False)
 
     st.sidebar.markdown("---")
 
-    st.sidebar.markdown("### 🎨 Interfaz")
+    st.sidebar.markdown("### 🎨 Interface")
     theme = st.sidebar.selectbox(
         "Tema",
         options=[Theme.DARK, Theme.LIGHT],
-        format_func=lambda x: "☀️ Claro" if x == Theme.LIGHT else "🌙 Oscuro",
+        format_func=lambda x: "☀️ Light" if x == Theme.LIGHT else "🌙 Dark",
     )
-    language = st.sidebar.selectbox("Idioma de respuesta", options=["es", "en"],
+    language = st.sidebar.selectbox("Answer Language", options=["es", "en"],
                                     format_func=lambda x: "🇪🇸 Español" if x == "es" else "🇺🇸 English")
-    show_timestamps = st.sidebar.checkbox("⏰ Mostrar timestamps", value=True)
+    show_timestamps = st.sidebar.checkbox("⏰ Show timestamps", value=True)
     auto_scroll = st.sidebar.checkbox("📜 Auto-scroll", value=True)
 
     st.sidebar.markdown("---")
 
-    with st.sidebar.expander("🔧 Opciones Avanzadas"):
-        debug = st.checkbox("Modo Debug", value=False)
+    with st.sidebar.expander("🔧 Advanced settings"):
+        debug = st.checkbox("Debug Mode", value=False)
 
     st.sidebar.markdown("---")
 
-    st.sidebar.markdown("### 📈 Estadísticas de Sesión")
+    st.sidebar.markdown("### 📈 Session Statistics")
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        st.metric("Total consultas", st.session_state.get("total_queries", 0))
+        st.metric("Total queries", st.session_state.get("total_queries", 0))
     with col2:
         from datetime import datetime
         session_start = st.session_state.get("session_start", datetime.now())
         duration = datetime.now() - session_start
-        st.metric("Duración", f"{duration.seconds // 60}m")
+        st.metric("Duration", f"{duration.seconds // 60}m")
 
-    if st.sidebar.button("🗑️ Limpiar Conversación", use_container_width=True):
+    if st.sidebar.button("🗑️ Clean conversation", use_container_width=True):
         st.session_state.messages = st.session_state.messages[:1]
         st.session_state.last_response = None
         st.session_state.total_queries = 0

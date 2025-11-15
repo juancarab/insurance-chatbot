@@ -67,7 +67,7 @@ class AgentRunner:
             (m for m in reversed(final_state.get("messages", [])) if isinstance(m, AIMessage)),
             None,
         )
-        answer = last_ai.content if last_ai else "No se pudo generar una respuesta."
+        answer = last_ai.content if last_ai else "A response could not be generated."
 
         final_sources = final_state.get("contexts", []) or []
         final_sources = sorted(

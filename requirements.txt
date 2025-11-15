@@ -8,13 +8,13 @@ python-dotenv>=1.0
 # --- Frontend ---
 streamlit>=1.33
 
-# --- LangChain + LangGraph (estables) ---
+# --- LangChain + LangGraph ---
 langchain-core>=0.3,<2
 langchain-community>=0.3,<0.5
 langchain-text-splitters>=0.3,<2
 langgraph>=0.2.35,<0.3
 
-# --- Google (Gemini) — SDK NUEVO ---
+# --- Google (Gemini) — SDK NEW ---
 google-genai>=0.3
 langchain-google-genai>=2.1,<3
 
@@ -23,7 +23,7 @@ langchain-huggingface>=0.1,<2
 sentence-transformers>=2.7
 pypdf>=4.2
 
-# --- Web search (si lo usas) ---
+# --- Web search ---
 tavily-python>=0.4
 langchain-tavily>=0.1
 
@@ -35,7 +35,7 @@ opensearch-py>=2.6
 # --- Tests ---
 pytest>=8
 
-# --- Evaluación automática (RAGAS) ---
+# --- Automatic evaluation (RAGAS) ---
 ragas==0.1.17
 datasets>=2.14,<2.19
 
